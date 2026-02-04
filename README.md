@@ -73,7 +73,8 @@ pyinstaller soundlowerer_plus.spec --clean
 
 ## Screenshots
 
-![Main Interface](screenshots/main.png)
+<img width="2560" height="1390" alt="image" src="https://github.com/user-attachments/assets/954277aa-6dfc-4c67-bd6b-1d01c6281c47" />
+
 
 ## License
 
