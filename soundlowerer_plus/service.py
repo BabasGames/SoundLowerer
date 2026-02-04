@@ -51,6 +51,7 @@ class VolumeServiceController:
         self._original: Dict[str, float] = {}
         self._modifiers = 0
         self._vk_code = 0
+        self._hold_released_early = False
 
     def start(self):
         if self._running:
@@ -122,16 +123,32 @@ class VolumeServiceController:
         else:
             # Mode hold: activer et surveiller le relâchement
             if not self._active:
-                self._apply_reduction()
-                # Démarrer un thread pour surveiller le relâchement
+                # Réinitialiser le flag
+                self._hold_released_early = False
+                # Démarrer le thread de surveillance AVANT d'appliquer la réduction
+                # pour ne pas rater le relâchement pendant le fade
                 self._hold_thread = threading.Thread(target=self._hold_loop, daemon=True)
                 self._hold_thread.start()
+                self._apply_reduction()
 
     def _hold_loop(self):
         """Boucle qui attend le relâchement de la touche en mode hold."""
         # Attendre un peu pour éviter la détection immédiate
-        time.sleep(0.1)
+        time.sleep(0.05)
 
+        # Attendre que _active devienne True (le fade est en cours ou terminé)
+        # mais aussi vérifier si la touche est toujours pressée
+        timeout = 0
+        while self._running and not self._active and timeout < 100:
+            # Vérifier si la touche a déjà été relâchée pendant le fade
+            if not is_key_pressed(self._vk_code):
+                # Marquer pour restauration dès que le fade est terminé
+                self._hold_released_early = True
+                return
+            time.sleep(0.02)
+            timeout += 1
+
+        # Maintenant surveiller le relâchement
         while self._running and self._active:
             # Vérifier si la touche principale est toujours pressée
             if not is_key_pressed(self._vk_code):
@@ -167,6 +184,11 @@ class VolumeServiceController:
                 set_volume_for_processes([proc], level)
             time.sleep(self.fade_ms / steps / 1000.0)
         self._active = True
+
+        # Si en mode hold et que la touche a été relâchée pendant le fade
+        if self.mode == "hold" and self._hold_released_early:
+            self._hold_released_early = False
+            self._restore()
 
     def _restore(self):
         if not self._original:

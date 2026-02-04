@@ -136,6 +136,14 @@ TRANSLATIONS = {
         "friday": "Vendredi",
         "saturday": "Samedi",
         "sunday": "Dimanche",
+        "default_vol_apps": "Applications concernées",
+        "default_vol_level": "Volume au démarrage (%)",
+        "default_vol_applied": "Volume par défaut appliqué à {} application(s)",
+        "schedule_active": "Planification active",
+        "schedule_inactive": "Planification inactive",
+        "game_detected": "Jeu détecté: {}",
+        "service_auto_started": "Service '{}' démarré automatiquement",
+        "select_apps": "Sélectionner les applications...",
     },
     "en": {
         "app_title": "SoundLowerer Plus",
@@ -259,6 +267,14 @@ TRANSLATIONS = {
         "friday": "Friday",
         "saturday": "Saturday",
         "sunday": "Sunday",
+        "default_vol_apps": "Target applications",
+        "default_vol_level": "Volume on startup (%)",
+        "default_vol_applied": "Default volume applied to {} application(s)",
+        "schedule_active": "Schedule active",
+        "schedule_inactive": "Schedule inactive",
+        "game_detected": "Game detected: {}",
+        "service_auto_started": "Service '{}' auto-started",
+        "select_apps": "Select applications...",
     }
 }
 
@@ -440,7 +456,10 @@ class SettingsDialog(QDialog):
     """Dialogue des paramètres"""
     def __init__(self, current_lang: str, current_theme: str, close_to_tray: bool = True,
                  advanced_mode: bool = False, startup_with_windows: bool = False,
-                 auto_backup: bool = False, backup_interval: int = 24, parent=None):
+                 auto_backup: bool = False, backup_interval: int = 24,
+                 default_volume_enabled: bool = False, default_volume_level: int = 100,
+                 default_volume_apps: list = None, game_detection_enabled: bool = False,
+                 parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("settings"))
         self.setMinimumWidth(400)
@@ -449,6 +468,10 @@ class SettingsDialog(QDialog):
         self._startup_with_windows = startup_with_windows
         self._auto_backup = auto_backup
         self._backup_interval = backup_interval
+        self._default_volume_enabled = default_volume_enabled
+        self._default_volume_level = default_volume_level
+        self._default_volume_apps = default_volume_apps or []
+        self._game_detection_enabled = game_detection_enabled
 
         # Appliquer le style selon le thème
         if is_dark_theme():
@@ -556,6 +579,54 @@ class SettingsDialog(QDialog):
 
         layout.addWidget(self.advanced_group)
 
+        # === Volume par défaut au démarrage ===
+        self.default_vol_group = QGroupBox(tr("default_volume"))
+        default_vol_layout = QVBoxLayout(self.default_vol_group)
+
+        self.default_vol_chk = QCheckBox(tr("default_volume_enabled"))
+        self.default_vol_chk.setToolTip(tr("default_volume_desc"))
+        self.default_vol_chk.setChecked(self._default_volume_enabled)
+        default_vol_layout.addWidget(self.default_vol_chk)
+
+        # Slider pour le niveau de volume
+        vol_row = QHBoxLayout()
+        vol_row.addWidget(QLabel(tr("default_vol_level")))
+        self.default_vol_slider = QSlider(Qt.Horizontal)
+        self.default_vol_slider.setRange(0, 100)
+        self.default_vol_slider.setValue(self._default_volume_level)
+        self.default_vol_label = QLabel(f"{self._default_volume_level}%")
+        self.default_vol_label.setMinimumWidth(40)
+        self.default_vol_slider.valueChanged.connect(lambda v: self.default_vol_label.setText(f"{v}%"))
+        vol_row.addWidget(self.default_vol_slider)
+        vol_row.addWidget(self.default_vol_label)
+        default_vol_layout.addLayout(vol_row)
+
+        # Bouton pour sélectionner les applications
+        self.default_vol_apps_btn = QPushButton(tr("select_apps"))
+        self.default_vol_apps_btn.clicked.connect(self._select_default_vol_apps)
+        default_vol_layout.addWidget(self.default_vol_apps_btn)
+
+        # Label pour afficher les apps sélectionnées
+        self.default_vol_apps_label = QLabel(", ".join(self._default_volume_apps) if self._default_volume_apps else "-")
+        self.default_vol_apps_label.setWordWrap(True)
+        self.default_vol_apps_label.setStyleSheet("font-size: 11px; color: #888;")
+        default_vol_layout.addWidget(self.default_vol_apps_label)
+
+        layout.addWidget(self.default_vol_group)
+        self.default_vol_group.setVisible(self._advanced_mode)
+
+        # === Détection de jeux ===
+        self.game_detection_group = QGroupBox(tr("game_detection"))
+        game_detect_layout = QVBoxLayout(self.game_detection_group)
+
+        self.game_detection_chk = QCheckBox(tr("game_detection_enabled"))
+        self.game_detection_chk.setToolTip(tr("game_detection_desc"))
+        self.game_detection_chk.setChecked(self._game_detection_enabled)
+        game_detect_layout.addWidget(self.game_detection_chk)
+
+        layout.addWidget(self.game_detection_group)
+        self.game_detection_group.setVisible(self._advanced_mode)
+
         # Afficher/cacher selon le mode
         self.advanced_group.setVisible(self._advanced_mode)
 
@@ -588,8 +659,77 @@ class SettingsDialog(QDialog):
 
     def _on_advanced_mode_changed(self, state):
         """Affiche/cache les options avancées"""
-        self.advanced_group.setVisible(state == Qt.Checked)
+        visible = state == Qt.Checked
+        self.advanced_group.setVisible(visible)
+        if hasattr(self, 'default_vol_group'):
+            self.default_vol_group.setVisible(visible)
+        if hasattr(self, 'game_detection_group'):
+            self.game_detection_group.setVisible(visible)
         self.adjustSize()
+
+    def _select_default_vol_apps(self):
+        """Ouvre un dialogue pour sélectionner les applications pour le volume par défaut"""
+        from audio_backend import unique_apps
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(tr("default_vol_apps"))
+        dialog.setMinimumSize(300, 400)
+
+        if is_dark_theme():
+            dialog.setStyleSheet("""
+                QDialog { background: #1e1e1e; }
+                QLabel { color: #e0e0e0; }
+                QListWidget { background: #2a2a2a; color: #e0e0e0; border: 1px solid #3a3a3a; border-radius: 4px; }
+                QListWidget::item:selected { background: #3d6a7a; }
+                QPushButton { background: #2a2a2a; color: #e0e0e0; border: 1px solid #3a3a3a; border-radius: 4px; padding: 6px 12px; }
+                QPushButton:hover { background: #353535; }
+            """)
+        else:
+            dialog.setStyleSheet("""
+                QDialog { background: #f5f5f5; }
+                QLabel { color: #333; }
+                QListWidget { background: #fff; color: #333; border: 1px solid #d0d0d0; border-radius: 4px; }
+                QListWidget::item:selected { background: #2563eb; color: white; }
+                QPushButton { background: #e8e8e8; color: #333; border: 1px solid #d0d0d0; border-radius: 4px; padding: 6px 12px; }
+                QPushButton:hover { background: #d8d8d8; }
+            """)
+
+        layout = QVBoxLayout(dialog)
+
+        # Liste des applications
+        app_list = QListWidget()
+        app_list.setSelectionMode(QAbstractItemView.MultiSelection)
+
+        # Récupérer les apps audio
+        apps = unique_apps(force_refresh=True)
+
+        # Ajouter les apps sélectionnées qui ne sont peut-être plus actives
+        for app in self._default_volume_apps:
+            if app not in apps:
+                apps.append(app)
+
+        for app in sorted(apps):
+            item = QListWidgetItem(app)
+            app_list.addItem(item)
+            if app in self._default_volume_apps:
+                item.setSelected(True)
+
+        layout.addWidget(app_list)
+
+        # Boutons
+        btn_layout = QHBoxLayout()
+        cancel_btn = QPushButton(tr("cancel"))
+        cancel_btn.clicked.connect(dialog.reject)
+        ok_btn = QPushButton(tr("ok"))
+        ok_btn.clicked.connect(dialog.accept)
+        btn_layout.addStretch()
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(ok_btn)
+        layout.addLayout(btn_layout)
+
+        if dialog.exec_() == QDialog.Accepted:
+            self._default_volume_apps = [item.text() for item in app_list.selectedItems()]
+            self.default_vol_apps_label.setText(", ".join(self._default_volume_apps) if self._default_volume_apps else "-")
 
     def _check_updates(self):
         """Vérifie les mises à jour sur GitHub"""
@@ -601,7 +741,8 @@ class SettingsDialog(QDialog):
                 import json
                 data = json.loads(response.read().decode())
                 latest_version = data.get("tag_name", "").lstrip("v")
-                current_version = "1.0.0"  # Version actuelle
+                from version import VERSION
+                current_version = VERSION.lstrip("v").split("-")[0]  # Enlever -beta etc.
 
                 if latest_version and latest_version != current_version:
                     QMessageBox.information(self, tr("check_updates"),
@@ -622,7 +763,11 @@ class SettingsDialog(QDialog):
             "advanced_mode": self.advanced_mode_chk.isChecked(),
             "startup_with_windows": self.startup_chk.isChecked(),
             "auto_backup": self.backup_chk.isChecked(),
-            "backup_interval": self.backup_interval_spin.value()
+            "backup_interval": self.backup_interval_spin.value(),
+            "default_volume_enabled": self.default_vol_chk.isChecked(),
+            "default_volume_level": self.default_vol_slider.value(),
+            "default_volume_apps": self._default_volume_apps,
+            "game_detection_enabled": self.game_detection_chk.isChecked()
         }
 from audio_backend import unique_apps
 from service import VolumeServiceController
@@ -900,6 +1045,10 @@ class MainWindow(QMainWindow):
         self._startup_with_windows = self.data.get("settings", {}).get("startup_with_windows", False)
         self._auto_backup = self.data.get("settings", {}).get("auto_backup", False)
         self._backup_interval = self.data.get("settings", {}).get("backup_interval", 24)
+        self._default_volume_enabled = self.data.get("settings", {}).get("default_volume_enabled", False)
+        self._default_volume_level = self.data.get("settings", {}).get("default_volume_level", 100)
+        self._default_volume_apps = self.data.get("settings", {}).get("default_volume_apps", [])
+        self._game_detection_enabled = self.data.get("settings", {}).get("game_detection_enabled", False)
         self._force_quit = False  # Pour distinguer fermeture réelle de minimisation
 
         self.setWindowTitle(tr("app_title"))
@@ -937,6 +1086,17 @@ class MainWindow(QMainWindow):
 
         # Restaurer les services actifs de la session précédente
         self._restore_active_services()
+
+        # Appliquer le volume par défaut si activé
+        if self._default_volume_enabled and self._default_volume_apps:
+            QTimer.singleShot(1000, self._apply_default_volume)
+
+        # Démarrer la détection de jeux si activée
+        if self._game_detection_enabled:
+            self._setup_game_detection()
+
+        # Démarrer la vérification de planification
+        self._setup_schedule_check()
 
         # Appliquer le thème une seconde fois pour les éléments créés après
         self._apply_theme()
@@ -1352,6 +1512,64 @@ class MainWindow(QMainWindow):
         # Cacher le groupe stats si pas en mode avancé
         self.grp_stats.setVisible(self._advanced_mode)
 
+        # === Groupe: Planification (mode avancé) ===
+        self.grp_schedule = QGroupBox(tr("schedule"))
+        grp_schedule_layout = QVBoxLayout(self.grp_schedule)
+        grp_schedule_layout.setSpacing(8)
+
+        self.schedule_enabled_chk = QCheckBox(tr("schedule_enabled"))
+        grp_schedule_layout.addWidget(self.schedule_enabled_chk)
+
+        # Ligne heures
+        time_row = QHBoxLayout()
+        time_row.addWidget(QLabel(tr("schedule_start")))
+
+        from PyQt5.QtWidgets import QTimeEdit
+        from PyQt5.QtCore import QTime
+        self.schedule_start_time = QTimeEdit()
+        self.schedule_start_time.setDisplayFormat("HH:mm")
+        self.schedule_start_time.setTime(QTime(9, 0))
+        time_row.addWidget(self.schedule_start_time)
+
+        time_row.addWidget(QLabel(tr("schedule_end")))
+        self.schedule_end_time = QTimeEdit()
+        self.schedule_end_time.setDisplayFormat("HH:mm")
+        self.schedule_end_time.setTime(QTime(18, 0))
+        time_row.addWidget(self.schedule_end_time)
+
+        time_row.addStretch()
+        grp_schedule_layout.addLayout(time_row)
+
+        # Jours de la semaine
+        days_row = QHBoxLayout()
+        self.day_checkboxes = {}
+        day_keys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        day_abbrevs = ["L", "M", "M", "J", "V", "S", "D"] if _current_lang == "fr" else ["M", "T", "W", "T", "F", "S", "S"]
+
+        for i, (key, abbrev) in enumerate(zip(day_keys, day_abbrevs)):
+            cb = QCheckBox(abbrev)
+            cb.setToolTip(tr(key))
+            cb.setChecked(i < 5)  # Lun-Ven cochés par défaut
+            self.day_checkboxes[key] = cb
+            days_row.addWidget(cb)
+
+        days_row.addStretch()
+        grp_schedule_layout.addLayout(days_row)
+
+        rv.addWidget(self.grp_schedule)
+        self.grp_schedule.setVisible(self._advanced_mode)
+
+        # === Groupe: Détection de jeux (mode avancé) ===
+        self.grp_game_detect = QGroupBox(tr("game_detection"))
+        grp_game_detect_layout = QVBoxLayout(self.grp_game_detect)
+
+        self.game_detect_chk = QCheckBox(tr("game_detection_enabled"))
+        self.game_detect_chk.setToolTip(tr("game_detection_desc"))
+        grp_game_detect_layout.addWidget(self.game_detect_chk)
+
+        rv.addWidget(self.grp_game_detect)
+        self.grp_game_detect.setVisible(self._advanced_mode)
+
         # === Groupe: Profils (mode avancé) ===
         self.grp_profiles = QGroupBox(tr("profiles"))
         grp_profiles_layout = QHBoxLayout(self.grp_profiles)
@@ -1461,6 +1679,30 @@ class MainWindow(QMainWindow):
                     self.last_used_label.setText("-")
             else:
                 self.last_used_label.setText("-")
+
+        # Charger la planification (mode avancé)
+        if self._advanced_mode and hasattr(self, 'schedule_enabled_chk'):
+            from PyQt5.QtCore import QTime
+            self.schedule_enabled_chk.setChecked(svc.get("schedule_enabled", False))
+            start_str = svc.get("schedule_start", "09:00")
+            end_str = svc.get("schedule_end", "18:00")
+            try:
+                start_parts = start_str.split(":")
+                self.schedule_start_time.setTime(QTime(int(start_parts[0]), int(start_parts[1])))
+                end_parts = end_str.split(":")
+                self.schedule_end_time.setTime(QTime(int(end_parts[0]), int(end_parts[1])))
+            except:
+                self.schedule_start_time.setTime(QTime(9, 0))
+                self.schedule_end_time.setTime(QTime(18, 0))
+
+            # Jours actifs
+            schedule_days = svc.get("schedule_days", ["monday", "tuesday", "wednesday", "thursday", "friday"])
+            for key, cb in self.day_checkboxes.items():
+                cb.setChecked(key in schedule_days)
+
+        # Charger la détection de jeux (mode avancé)
+        if self._advanced_mode and hasattr(self, 'game_detect_chk'):
+            self.game_detect_chk.setChecked(svc.get("game_detection", False))
 
     def _toggle_service(self, idx: int):
         """Double-clic pour démarrer/arrêter"""
@@ -1631,7 +1873,7 @@ class MainWindow(QMainWindow):
     # --- Formulaire ---
     def _form_to_service(self) -> Dict:
         targets = [name for name, cb in self.targets_checkboxes.items() if cb.isChecked()]
-        return {
+        svc = {
             "name": self.name_edit.text() or (targets[0] if targets else "Service"),
             "targets": targets,
             "hotkey": self.hk_edit.text().strip(),
@@ -1641,6 +1883,18 @@ class MainWindow(QMainWindow):
             "curve": self.curve_combo.currentText(),
             "all_except": self.all_except_chk.isChecked()
         }
+
+        # Ajouter les champs avancés si disponibles
+        if hasattr(self, 'schedule_enabled_chk'):
+            svc["schedule_enabled"] = self.schedule_enabled_chk.isChecked()
+            svc["schedule_start"] = self.schedule_start_time.time().toString("HH:mm")
+            svc["schedule_end"] = self.schedule_end_time.time().toString("HH:mm")
+            svc["schedule_days"] = [key for key, cb in self.day_checkboxes.items() if cb.isChecked()]
+
+        if hasattr(self, 'game_detect_chk'):
+            svc["game_detection"] = self.game_detect_chk.isChecked()
+
+        return svc
 
     def _validate(self, svc: Dict, exclude_idx: int = -1) -> str:
         if not svc["hotkey"]:
@@ -1954,6 +2208,10 @@ class MainWindow(QMainWindow):
             startup_with_windows=self._startup_with_windows,
             auto_backup=self._auto_backup,
             backup_interval=self._backup_interval,
+            default_volume_enabled=self._default_volume_enabled,
+            default_volume_level=self._default_volume_level,
+            default_volume_apps=self._default_volume_apps,
+            game_detection_enabled=self._game_detection_enabled,
             parent=self
         )
 
@@ -2003,6 +2261,28 @@ class MainWindow(QMainWindow):
                 self.data.setdefault("settings", {})["auto_backup"] = self._auto_backup
                 self.data.setdefault("settings", {})["backup_interval"] = self._backup_interval
                 self._setup_auto_backup()
+                self._dirty = True
+
+            # Appliquer volume par défaut
+            if (settings["default_volume_enabled"] != self._default_volume_enabled or
+                settings["default_volume_level"] != self._default_volume_level or
+                settings["default_volume_apps"] != self._default_volume_apps):
+                self._default_volume_enabled = settings["default_volume_enabled"]
+                self._default_volume_level = settings["default_volume_level"]
+                self._default_volume_apps = settings["default_volume_apps"]
+                self.data.setdefault("settings", {})["default_volume_enabled"] = self._default_volume_enabled
+                self.data.setdefault("settings", {})["default_volume_level"] = self._default_volume_level
+                self.data.setdefault("settings", {})["default_volume_apps"] = self._default_volume_apps
+                self._dirty = True
+
+            # Appliquer détection de jeux
+            if settings["game_detection_enabled"] != self._game_detection_enabled:
+                self._game_detection_enabled = settings["game_detection_enabled"]
+                self.data.setdefault("settings", {})["game_detection_enabled"] = self._game_detection_enabled
+                if self._game_detection_enabled:
+                    self._setup_game_detection()
+                else:
+                    self._stop_game_detection()
                 self._dirty = True
 
             # Rafraîchir l'UI si la langue a changé
@@ -2220,6 +2500,10 @@ class MainWindow(QMainWindow):
             self.grp_stats.setVisible(self._advanced_mode)
         if hasattr(self, 'grp_profiles'):
             self.grp_profiles.setVisible(self._advanced_mode)
+        if hasattr(self, 'grp_schedule'):
+            self.grp_schedule.setVisible(self._advanced_mode)
+        if hasattr(self, 'grp_game_detect'):
+            self.grp_game_detect.setVisible(self._advanced_mode)
 
     # --- Profils ---
     def _get_profiles_dir(self):
@@ -2385,3 +2669,135 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             print(f"Erreur lors du backup: {e}")
+
+    # --- Volume par défaut ---
+    def _apply_default_volume(self):
+        """Applique le volume par défaut aux applications configurées"""
+        if not self._default_volume_apps:
+            return
+
+        from audio_backend import set_volume_for_processes
+        volume = self._default_volume_level / 100.0
+        set_volume_for_processes(self._default_volume_apps, volume)
+        self.statusBar().showMessage(tr("default_vol_applied").format(len(self._default_volume_apps)), 3000)
+
+    # --- Détection de jeux ---
+    # Liste des processus de jeux courants
+    GAME_PROCESSES = [
+        "game", "unity", "unreal", "godot",
+        # Launchers
+        "steam", "epicgameslauncher", "origin", "uplay", "battlenet",
+        # Jeux populaires
+        "valorant", "csgo", "cs2", "dota2", "leagueoflegends", "fortnite",
+        "minecraft", "rocketleague", "apex", "overwatch", "pubg",
+        "gtav", "rdr2", "cyberpunk", "eldenring", "hogwartslegacy",
+        "baldursgate3", "starfield", "diablo", "worldofwarcraft",
+        "destiny2", "warframe", "pathofexile", "lostark",
+        # Suffixes communs
+        "-win64-shipping", "win64-shipping", "game.exe", "launcher"
+    ]
+
+    def _setup_game_detection(self):
+        """Configure la détection automatique de jeux"""
+        self.game_detection_timer = QTimer(self)
+        self.game_detection_timer.setInterval(5000)  # Vérifier toutes les 5 secondes
+        self.game_detection_timer.timeout.connect(self._check_for_games)
+        self.game_detection_timer.start()
+        self._detected_games = set()
+
+    def _check_for_games(self):
+        """Vérifie si un jeu est en cours d'exécution"""
+        if not self._game_detection_enabled:
+            return
+
+        from audio_backend import unique_apps
+        current_apps = unique_apps(force_refresh=True)
+
+        # Chercher des jeux
+        games_found = set()
+        for app in current_apps:
+            app_lower = app.lower()
+            for game_pattern in self.GAME_PROCESSES:
+                if game_pattern in app_lower:
+                    games_found.add(app)
+                    break
+
+        # Nouveaux jeux détectés
+        new_games = games_found - self._detected_games
+
+        if new_games:
+            for game in new_games:
+                self.statusBar().showMessage(tr("game_detected").format(game), 3000)
+
+            # Démarrer les services qui ont game_detection activé
+            for idx, svc in enumerate(self.services):
+                if svc.get("game_detection", False) and idx not in self.controllers:
+                    self._start_at_index(idx)
+                    self.statusBar().showMessage(tr("service_auto_started").format(svc.get("name", "")), 3000)
+
+        # Jeux qui ne sont plus en cours
+        stopped_games = self._detected_games - games_found
+
+        if stopped_games:
+            # Arrêter les services qui ont game_detection activé
+            for idx, svc in enumerate(self.services):
+                if svc.get("game_detection", False) and idx in self.controllers:
+                    self._stop_at_index(idx)
+
+        self._detected_games = games_found
+
+    def _stop_game_detection(self):
+        """Arrête la détection de jeux"""
+        if hasattr(self, 'game_detection_timer'):
+            self.game_detection_timer.stop()
+
+    # --- Planification ---
+    def _setup_schedule_check(self):
+        """Configure la vérification périodique de la planification"""
+        self.schedule_timer = QTimer(self)
+        self.schedule_timer.setInterval(60000)  # Vérifier chaque minute
+        self.schedule_timer.timeout.connect(self._check_schedules)
+        self.schedule_timer.start()
+        # Vérifier immédiatement au démarrage
+        QTimer.singleShot(2000, self._check_schedules)
+
+    def _check_schedules(self):
+        """Vérifie si les services planifiés doivent être démarrés ou arrêtés"""
+        if not self._advanced_mode:
+            return
+
+        from datetime import datetime
+        now = datetime.now()
+        current_time = now.strftime("%H:%M")
+        current_day_idx = now.weekday()  # 0 = Monday
+        day_keys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        current_day = day_keys[current_day_idx]
+
+        for idx, svc in enumerate(self.services):
+            if not svc.get("schedule_enabled", False):
+                continue
+
+            schedule_days = svc.get("schedule_days", [])
+            schedule_start = svc.get("schedule_start", "09:00")
+            schedule_end = svc.get("schedule_end", "18:00")
+
+            # Vérifier si c'est un jour actif
+            if current_day not in schedule_days:
+                # Arrêter le service s'il tourne
+                if idx in self.controllers:
+                    self._stop_at_index(idx)
+                continue
+
+            # Vérifier l'heure
+            is_within_schedule = schedule_start <= current_time <= schedule_end
+
+            if is_within_schedule:
+                # Démarrer si pas déjà actif
+                if idx not in self.controllers:
+                    self._start_at_index(idx)
+                    self.statusBar().showMessage(tr("schedule_active") + f" - {svc.get('name', '')}", 3000)
+            else:
+                # Arrêter si actif
+                if idx in self.controllers:
+                    self._stop_at_index(idx)
+                    self.statusBar().showMessage(tr("schedule_inactive") + f" - {svc.get('name', '')}", 3000)
