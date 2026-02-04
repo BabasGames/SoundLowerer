@@ -6,6 +6,7 @@ A Windows application to automatically lower the volume of specific applications
 
 ## Features
 
+### Basic Features
 - **Custom hotkeys** - Assign any keyboard shortcut to control volume
 - **Per-app control** - Target specific applications (Spotify, Discord, games, etc.)
 - **Two modes**:
@@ -16,10 +17,20 @@ A Windows application to automatically lower the volume of specific applications
 - **Multiple services** - Create different profiles for different use cases
 - **Same hotkey support** - Use one shortcut to control multiple apps
 - **Import/Export** - Share your configurations as `.slp` files
-- **System tray** - Runs quietly in the background
+- **System tray** - Runs quietly in the background with colored indicator
 - **Auto-restore** - Services resume automatically on startup
 - **Bilingual** - French and English interface
 - **Dark/Light theme**
+- **Keyboard shortcuts** - Delete, Enter, Space to manage services
+- **Service search** - Filter services by name
+- **Drag & drop** - Reorder services by dragging
+
+### Advanced Features (enable in Settings)
+- **Profiles** - Save/load sets of services for different use cases
+- **Start with Windows** - Launch automatically at startup
+- **Auto backup** - Automatically backup your configuration
+- **Usage statistics** - Track how often each service is used
+- **Update checker** - Check for new versions on GitHub
 
 ## Installation
 

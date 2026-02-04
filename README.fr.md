@@ -6,6 +6,7 @@ Une application Windows pour baisser automatiquement le volume de certaines appl
 
 ## Fonctionnalités
 
+### Fonctionnalités de base
 - **Raccourcis personnalisés** - Assignez n'importe quel raccourci clavier
 - **Contrôle par application** - Ciblez des applications spécifiques (Spotify, Discord, jeux, etc.)
 - **Deux modes** :
@@ -16,10 +17,20 @@ Une application Windows pour baisser automatiquement le volume de certaines appl
 - **Services multiples** - Créez différents profils selon vos besoins
 - **Même raccourci** - Utilisez un raccourci pour contrôler plusieurs apps
 - **Import/Export** - Partagez vos configurations en fichiers `.slp`
-- **Barre des tâches** - Fonctionne discrètement en arrière-plan
+- **Barre des tâches** - Fonctionne discrètement avec indicateur coloré
 - **Auto-restauration** - Les services reprennent automatiquement au démarrage
 - **Bilingue** - Interface française et anglaise
 - **Thème sombre/clair**
+- **Raccourcis clavier** - Suppr, Entrée, Espace pour gérer les services
+- **Recherche de services** - Filtrez les services par nom
+- **Glisser-déposer** - Réorganisez les services par glisser-déposer
+
+### Fonctionnalités avancées (activer dans Paramètres)
+- **Profils** - Sauvegardez/chargez des ensembles de services
+- **Démarrer avec Windows** - Lancement automatique au démarrage
+- **Sauvegarde auto** - Sauvegarde automatique de votre configuration
+- **Statistiques** - Suivez la fréquence d'utilisation de chaque service
+- **Vérification des mises à jour** - Vérifiez les nouvelles versions sur GitHub
 
 ## Installation
 

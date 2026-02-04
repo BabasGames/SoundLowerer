@@ -1,0 +1,12 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle - Green when active -->
+  <circle cx="12" cy="12" r="11" fill="#22c55e"/>
+  <circle cx="12" cy="12" r="9.5" fill="#1e1e1e"/>
+
+  <!-- Speaker icon -->
+  <path d="M8 9.5v5h2.5l3 3v-11l-3 3H8z" fill="#22c55e"/>
+
+  <!-- Sound waves (active style) -->
+  <path d="M15 10.5c0.5 0.5 0.8 1 0.8 1.5s-0.3 1-0.8 1.5" stroke="#22c55e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M16.5 9c1 1 1.5 1.9 1.5 3s-0.5 2-1.5 3" stroke="#22c55e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+</svg>
