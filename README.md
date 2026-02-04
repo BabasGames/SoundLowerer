@@ -29,7 +29,7 @@ A Windows application to automatically lower the volume of specific applications
 ### From Source
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/SoundLowerer.git
+git clone https://github.com/BabasGames/SoundLowerer.git
 cd SoundLowerer
 
 # Install dependencies
