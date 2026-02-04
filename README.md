@@ -31,6 +31,9 @@ A Windows application to automatically lower the volume of specific applications
 - **Auto backup** - Automatically backup your configuration
 - **Usage statistics** - Track how often each service is used
 - **Update checker** - Check for new versions on GitHub
+- **Default volume on startup** - Reset specific apps to a defined volume when launching
+- **Hourly scheduling** - Automatically start/stop services based on time and day
+- **Game detection** - Auto-start services when a game is detected
 
 ## Installation
 
