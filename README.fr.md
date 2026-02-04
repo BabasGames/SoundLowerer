@@ -31,6 +31,9 @@ Une application Windows pour baisser automatiquement le volume de certaines appl
 - **Sauvegarde auto** - Sauvegarde automatique de votre configuration
 - **Statistiques** - Suivez la fréquence d'utilisation de chaque service
 - **Vérification des mises à jour** - Vérifiez les nouvelles versions sur GitHub
+- **Volume par défaut au démarrage** - Remet les applications au volume spécifié au lancement
+- **Planification horaire** - Démarre/arrête automatiquement les services selon l'heure et le jour
+- **Détection de jeux** - Démarre automatiquement les services quand un jeu est détecté
 
 ## Installation
 
