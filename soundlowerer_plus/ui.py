@@ -73,6 +73,26 @@ TRANSLATIONS = {
         "import_error": "Erreur lors de l'import",
         "export_filter": "Service SoundLowerer (*.slp)",
         "import_filter": "Service SoundLowerer (*.slp)",
+        # Tooltips
+        "tooltip_service_name": "Nom pour identifier ce service dans la liste",
+        "tooltip_filter_apps": "Tapez pour filtrer la liste des applications",
+        "tooltip_add_app": "Ajouter un programme manuellement",
+        "tooltip_add": "Ajouter",
+        "tooltip_hotkey": "Raccourci clavier pour activer/désactiver ce service",
+        "tooltip_reduction": "Pourcentage de réduction du volume\n75% = le volume passe à 25% de l'original",
+        "tooltip_mode": "hold: maintenir la touche appuyée pour réduire\ntoggle: appuyer pour activer/désactiver",
+        "tooltip_fade": "Durée de la transition de volume en millisecondes\n0 = changement instantané",
+        "tooltip_curve": "linear: transition à vitesse constante\nexpo: transition plus naturelle (rapide au début)",
+        "tooltip_invert": "Réduit TOUT sauf les applications sélectionnées",
+        # Paramètres supplémentaires
+        "close_to_tray": "Réduire dans la barre des tâches",
+        "close_to_tray_desc": "Fermer la fenêtre réduit l'app dans la zone de notification",
+        "behavior": "Comportement",
+        "replay_tutorial": "Revoir le tutoriel",
+        "tray_open": "Ouvrir",
+        "tray_quit": "Quitter",
+        "tray_toggle_all": "Activer/Désactiver tous",
+        "minimized_to_tray": "SoundLowerer réduit dans la barre des tâches",
     },
     "en": {
         "app_title": "SoundLowerer Plus",
@@ -134,6 +154,26 @@ TRANSLATIONS = {
         "import_error": "Import error",
         "export_filter": "SoundLowerer Service (*.slp)",
         "import_filter": "SoundLowerer Service (*.slp)",
+        # Tooltips
+        "tooltip_service_name": "Name to identify this service in the list",
+        "tooltip_filter_apps": "Type to filter the application list",
+        "tooltip_add_app": "Add a program manually",
+        "tooltip_add": "Add",
+        "tooltip_hotkey": "Keyboard shortcut to activate/deactivate this service",
+        "tooltip_reduction": "Volume reduction percentage\n75% = volume goes to 25% of original",
+        "tooltip_mode": "hold: keep the key pressed to reduce\ntoggle: press to activate/deactivate",
+        "tooltip_fade": "Volume transition duration in milliseconds\n0 = instant change",
+        "tooltip_curve": "linear: constant speed transition\nexpo: more natural transition (fast at start)",
+        "tooltip_invert": "Reduce ALL except selected applications",
+        # Additional settings
+        "close_to_tray": "Minimize to system tray",
+        "close_to_tray_desc": "Closing the window minimizes the app to notification area",
+        "behavior": "Behavior",
+        "replay_tutorial": "Replay tutorial",
+        "tray_open": "Open",
+        "tray_quit": "Quit",
+        "tray_toggle_all": "Toggle all",
+        "minimized_to_tray": "SoundLowerer minimized to system tray",
     }
 }
 
@@ -309,10 +349,11 @@ class TutorialDialog(QDialog):
 
 class SettingsDialog(QDialog):
     """Dialogue des paramètres"""
-    def __init__(self, current_lang: str, current_theme: str, parent=None):
+    def __init__(self, current_lang: str, current_theme: str, close_to_tray: bool = True, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("settings"))
         self.setMinimumWidth(320)
+        self._close_to_tray = close_to_tray
 
         # Appliquer le style selon le thème
         if is_dark_theme():
@@ -372,8 +413,17 @@ class SettingsDialog(QDialog):
         theme_layout.addWidget(self.theme_combo)
         layout.addWidget(theme_group)
 
+        # Comportement
+        behavior_group = QGroupBox(tr("behavior"))
+        behavior_layout = QVBoxLayout(behavior_group)
+        self.close_to_tray_chk = QCheckBox(tr("close_to_tray"))
+        self.close_to_tray_chk.setToolTip(tr("close_to_tray_desc"))
+        self.close_to_tray_chk.setChecked(self._close_to_tray)
+        behavior_layout.addWidget(self.close_to_tray_chk)
+        layout.addWidget(behavior_group)
+
         # Bouton tutoriel
-        tutorial_btn = QPushButton("🎓 " + ("Replay Tutorial" if _current_lang == "en" else "Revoir le tutoriel"))
+        tutorial_btn = QPushButton("🎓 " + tr("replay_tutorial"))
         tutorial_btn.clicked.connect(self._show_tutorial)
         layout.addWidget(tutorial_btn)
 
@@ -405,7 +455,8 @@ class SettingsDialog(QDialog):
     def get_settings(self) -> Dict:
         return {
             "language": self.lang_combo.currentData(),
-            "theme": self.theme_combo.currentData()
+            "theme": self.theme_combo.currentData(),
+            "close_to_tray": self.close_to_tray_chk.isChecked()
         }
 from audio_backend import unique_apps
 from service import VolumeServiceController
@@ -630,6 +681,8 @@ class MainWindow(QMainWindow):
         global _current_lang
         _current_lang = self.data.get("settings", {}).get("language", "fr")
         self._current_theme = self.data.get("settings", {}).get("theme", "dark")
+        self._close_to_tray = self.data.get("settings", {}).get("close_to_tray", True)
+        self._force_quit = False  # Pour distinguer fermeture réelle de minimisation
 
         self.setWindowTitle(tr("app_title"))
         self.resize(900, 650)
@@ -845,8 +898,8 @@ class MainWindow(QMainWindow):
         grp_service_layout.setSpacing(8)
 
         self.name_edit = QLineEdit()
-        self.name_edit.setPlaceholderText("Nom du service...")
-        self.name_edit.setToolTip("Nom pour identifier ce service dans la liste")
+        self.name_edit.setPlaceholderText("Nom du service..." if _current_lang == "fr" else "Service name...")
+        self.name_edit.setToolTip(tr("tooltip_service_name"))
 
         lbl_name = QLabel(tr("name"))
         grp_service_layout.addWidget(lbl_name)
@@ -861,7 +914,7 @@ class MainWindow(QMainWindow):
 
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText(tr("filter_apps"))
-        self.filter_edit.setToolTip("Tapez pour filtrer la liste des applications")
+        self.filter_edit.setToolTip(tr("tooltip_filter_apps"))
         self.filter_edit.textChanged.connect(self._filter_apps)
 
         # Scroll area pour les checkboxes
@@ -884,13 +937,13 @@ class MainWindow(QMainWindow):
         # Ajout manuel d'application
         add_app_row = QHBoxLayout()
         self.add_app_edit = QLineEdit()
-        self.add_app_edit.setPlaceholderText("spotify.exe" if _current_lang == "en" else "spotify.exe")
-        self.add_app_edit.setToolTip("Add a program manually" if _current_lang == "en" else "Ajouter un programme manuellement")
+        self.add_app_edit.setPlaceholderText("spotify.exe")
+        self.add_app_edit.setToolTip(tr("tooltip_add_app"))
         self.add_app_edit.returnPressed.connect(self._add_manual_app)
 
         self.add_app_btn = QPushButton("+")
         self.add_app_btn.setFixedWidth(36)
-        self.add_app_btn.setToolTip("Add" if _current_lang == "en" else "Ajouter")
+        self.add_app_btn.setToolTip(tr("tooltip_add"))
         self.add_app_btn.clicked.connect(self._add_manual_app)
 
         add_app_row.addWidget(self.add_app_edit, 1)
@@ -902,7 +955,7 @@ class MainWindow(QMainWindow):
         self.refresh_btn.clicked.connect(self._refresh_apps)
 
         self.all_except_chk = QCheckBox(tr("invert_whitelist"))
-        self.all_except_chk.setToolTip(tr("invert_whitelist"))
+        self.all_except_chk.setToolTip(tr("tooltip_invert"))
 
         targets_btn_row.addWidget(self.refresh_btn)
         targets_btn_row.addWidget(self.all_except_chk)
@@ -923,7 +976,7 @@ class MainWindow(QMainWindow):
         hotkey_row = QHBoxLayout()
         self.hk_edit = QLineEdit()
         self.hk_edit.setPlaceholderText("ctrl+shift+m")
-        self.hk_edit.setToolTip(tr("hotkey"))
+        self.hk_edit.setToolTip(tr("tooltip_hotkey"))
 
         self.hk_btn = QPushButton(tr("record"))
         self.hk_btn.setToolTip(tr("record"))
@@ -947,7 +1000,7 @@ class MainWindow(QMainWindow):
         self.reduct_slider = QSlider(Qt.Horizontal)
         self.reduct_slider.setRange(0, 100)
         self.reduct_slider.setValue(75)
-        self.reduct_slider.setToolTip("Pourcentage de réduction du volume\n75% = le volume passe à 25% de l'original")
+        self.reduct_slider.setToolTip(tr("tooltip_reduction"))
         self.reduct_label = QLabel("75%")
         self.reduct_label.setMinimumWidth(40)
         self.reduct_slider.valueChanged.connect(lambda v: self.reduct_label.setText(f"{v}%"))
@@ -963,7 +1016,7 @@ class MainWindow(QMainWindow):
         lbl_mode = QLabel(tr("mode"))
         self.mode_combo = QComboBox()
         self.mode_combo.addItems(["hold", "toggle"])
-        self.mode_combo.setToolTip("hold: maintenir la touche appuyée pour réduire\ntoggle: appuyer pour activer/désactiver")
+        self.mode_combo.setToolTip(tr("tooltip_mode"))
         mode_row.addWidget(lbl_mode)
         mode_row.addWidget(self.mode_combo, 1)
 
@@ -976,12 +1029,12 @@ class MainWindow(QMainWindow):
         self.fade_spin.setRange(0, 5000)
         self.fade_spin.setValue(300)
         self.fade_spin.setSuffix(" ms")
-        self.fade_spin.setToolTip("Durée de la transition de volume en millisecondes\n0 = changement instantané")
+        self.fade_spin.setToolTip(tr("tooltip_fade"))
 
         lbl_curve = QLabel(tr("curve"))
         self.curve_combo = QComboBox()
         self.curve_combo.addItems(["linear", "expo"])
-        self.curve_combo.setToolTip("linear: transition à vitesse constante\nexpo: transition plus naturelle (rapide au début)")
+        self.curve_combo.setToolTip(tr("tooltip_curve"))
 
         fade_row.addWidget(lbl_fade)
         fade_row.addWidget(self.fade_spin)
@@ -1142,16 +1195,33 @@ class MainWindow(QMainWindow):
     # --- Tray ---
     def _setup_tray(self):
         self.tray = QSystemTrayIcon(QIcon(os.path.join(resource_path("icons"), "tray.svg")), self)
-        menu = QMenu()
-        self.toggle_all_act = menu.addAction("Activer/Désactiver tous")
+        self.tray.activated.connect(self._on_tray_activated)
+        self.tray_menu = QMenu()
+        self.toggle_all_act = self.tray_menu.addAction(tr("tray_toggle_all"))
         self.toggle_all_act.triggered.connect(self._toggle_all)
-        menu.addSeparator()
-        self.open_act = menu.addAction("Ouvrir")
-        self.open_act.triggered.connect(self.showNormal)
-        self.quit_act = menu.addAction("Quitter")
-        self.quit_act.triggered.connect(self.close)
-        self.tray.setContextMenu(menu)
+        self.tray_menu.addSeparator()
+        self.open_act = self.tray_menu.addAction(tr("tray_open"))
+        self.open_act.triggered.connect(self._show_from_tray)
+        self.quit_act = self.tray_menu.addAction(tr("tray_quit"))
+        self.quit_act.triggered.connect(self._quit_app)
+        self.tray.setContextMenu(self.tray_menu)
         self.tray.show()
+
+    def _on_tray_activated(self, reason):
+        """Double-clic sur l'icône du tray pour ouvrir la fenêtre"""
+        if reason == QSystemTrayIcon.DoubleClick:
+            self._show_from_tray()
+
+    def _show_from_tray(self):
+        """Restaure la fenêtre depuis le tray"""
+        self.showNormal()
+        self.activateWindow()
+        self.raise_()
+
+    def _quit_app(self):
+        """Quitte réellement l'application"""
+        self._force_quit = True
+        self.close()
 
     def _toggle_all(self):
         running = any(c.is_active() for c in self.controllers.values()) if self.controllers else False
@@ -1477,11 +1547,25 @@ class MainWindow(QMainWindow):
         Timer(0.8, c._restore).start()
 
     def closeEvent(self, e):
+        # Si close_to_tray est activé et qu'on ne force pas la fermeture
+        if self._close_to_tray and not self._force_quit:
+            e.ignore()
+            self.hide()
+            self.tray.showMessage(
+                tr("app_title"),
+                tr("minimized_to_tray"),
+                QSystemTrayIcon.Information,
+                2000
+            )
+            return
+
+        # Fermeture réelle
         self.data["settings"]["active_services"] = list(self.controllers.keys())
         self._dirty = True
         self._autosave()
         for idx, ctrl in list(self.controllers.items()):
             ctrl.stop()
+        self.tray.hide()
         e.accept()
 
     def _restore_active_services(self):
@@ -1556,6 +1640,7 @@ class MainWindow(QMainWindow):
         dialog = SettingsDialog(
             current_lang=_current_lang,
             current_theme=self._current_theme,
+            close_to_tray=self._close_to_tray,
             parent=self
         )
 
@@ -1575,6 +1660,12 @@ class MainWindow(QMainWindow):
                 self._current_theme = settings["theme"]
                 self.data.setdefault("settings", {})["theme"] = self._current_theme
                 self._apply_theme()
+                self._dirty = True
+
+            # Appliquer close_to_tray
+            if settings["close_to_tray"] != self._close_to_tray:
+                self._close_to_tray = settings["close_to_tray"]
+                self.data.setdefault("settings", {})["close_to_tray"] = self._close_to_tray
                 self._dirty = True
 
             # Rafraîchir l'UI si la langue a changé
@@ -1666,10 +1757,24 @@ class MainWindow(QMainWindow):
         # Placeholders
         self.filter_edit.setPlaceholderText(tr("filter_apps"))
         self.add_app_edit.setPlaceholderText("spotify.exe")
-        self.add_app_edit.setToolTip("Add a program manually" if _current_lang == "en" else "Ajouter un programme manuellement")
-        self.add_app_btn.setToolTip("Add" if _current_lang == "en" else "Ajouter")
 
-        # Labels (trouver par position dans les layouts est complexe, on laisse)
+        # Tooltips
+        self.name_edit.setToolTip(tr("tooltip_service_name"))
+        self.filter_edit.setToolTip(tr("tooltip_filter_apps"))
+        self.add_app_edit.setToolTip(tr("tooltip_add_app"))
+        self.add_app_btn.setToolTip(tr("tooltip_add"))
+        self.hk_edit.setToolTip(tr("tooltip_hotkey"))
+        self.reduct_slider.setToolTip(tr("tooltip_reduction"))
+        self.mode_combo.setToolTip(tr("tooltip_mode"))
+        self.fade_spin.setToolTip(tr("tooltip_fade"))
+        self.curve_combo.setToolTip(tr("tooltip_curve"))
+        self.all_except_chk.setToolTip(tr("tooltip_invert"))
+
+        # Menu du tray
+        if hasattr(self, 'tray_menu'):
+            self.toggle_all_act.setText(tr("tray_toggle_all"))
+            self.open_act.setText(tr("tray_open"))
+            self.quit_act.setText(tr("tray_quit"))
 
         # Rafraîchir la liste des services pour mettre à jour "Pas de raccourci"
         self._load_list()

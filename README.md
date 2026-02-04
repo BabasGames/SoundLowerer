@@ -1,5 +1,7 @@
 # SoundLowerer
 
+🇫🇷 [Lire en français](README.fr.md)
+
 A Windows application to automatically lower the volume of specific applications using keyboard shortcuts.
 
 ## Features
@@ -25,6 +27,8 @@ A Windows application to automatically lower the volume of specific applications
 1. Download the latest `soundlowerer_plus.exe` from [Releases](../../releases)
 2. Run the executable
 3. **Run as Administrator** for hotkeys to work in games
+
+> **Note**: Windows SmartScreen may display a warning on first launch because the app is not signed with a paid certificate. This is normal for independent software. Click **"More info"** then **"Run anyway"** to proceed. The application is open source and safe to use.
 
 ### From Source
 ```bash
