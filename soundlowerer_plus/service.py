@@ -34,7 +34,7 @@ def are_modifiers_pressed(modifiers: int) -> bool:
 class VolumeServiceController:
     def __init__(self, name: str, targets: List[str], hotkey: str, reduction_pct: int,
                  mode: str = "hold", fade_ms: int = 300, curve: str = "linear",
-                 all_except: bool = False):
+                 all_except: bool = False, on_use_callback=None):
         self.name = name or (targets[0] if targets else "Service")
         self.targets = targets[:]  # list of process names
         self.hotkey = hotkey
@@ -43,6 +43,7 @@ class VolumeServiceController:
         self.fade_ms = max(0, fade_ms)
         self.curve = curve  # "linear" or "expo"
         self.all_except = all_except
+        self.on_use_callback = on_use_callback  # Callback appelé à chaque utilisation
         self._running = False
         self._active = False
         self._hotkey_id: int = 0
@@ -104,6 +105,13 @@ class VolumeServiceController:
 
         if not self._running:
             return
+
+        # Appeler le callback de statistiques si défini
+        if self.on_use_callback:
+            try:
+                self.on_use_callback()
+            except Exception as e:
+                get_logger().error(f"Erreur dans on_use_callback: {e}")
 
         if self.mode == "toggle":
             # Mode toggle: alterner entre activé et désactivé

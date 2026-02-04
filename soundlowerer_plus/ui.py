@@ -8,7 +8,8 @@ from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QFileDialog
 )
 from PyQt5.QtCore import Qt, QTimer, QSize, pyqtSignal
-from PyQt5.QtGui import QIcon, QColor, QBrush, QFont, QPainter, QPen
+from PyQt5.QtGui import QIcon, QColor, QBrush, QFont, QPainter, QPen, QKeySequence
+from PyQt5.QtWidgets import QShortcut
 
 
 # Traductions
@@ -93,6 +94,48 @@ TRANSLATIONS = {
         "tray_quit": "Quitter",
         "tray_toggle_all": "Activer/Désactiver tous",
         "minimized_to_tray": "SoundLowerer réduit dans la barre des tâches",
+        # Mode avancé
+        "advanced_mode": "Mode avancé",
+        "advanced_mode_desc": "Afficher les fonctionnalités avancées",
+        "simple_mode": "Mode simple",
+        "profiles": "Profils",
+        "save_profile": "Sauvegarder le profil",
+        "load_profile": "Charger un profil",
+        "delete_profile": "Supprimer le profil",
+        "profile_name": "Nom du profil",
+        "profile_saved": "Profil '{}' sauvegardé",
+        "profile_loaded": "Profil '{}' chargé",
+        "profile_deleted": "Profil '{}' supprimé",
+        "schedule": "Planification",
+        "schedule_enabled": "Activer la planification",
+        "schedule_start": "Heure de début",
+        "schedule_end": "Heure de fin",
+        "schedule_days": "Jours actifs",
+        "game_detection": "Détection de jeux",
+        "game_detection_enabled": "Activer quand un jeu se lance",
+        "game_detection_desc": "Active automatiquement ce service quand un jeu est détecté",
+        "default_volume": "Volume par défaut",
+        "default_volume_enabled": "Définir le volume au démarrage",
+        "default_volume_desc": "Remet les applications au volume spécifié au lancement",
+        "startup_with_windows": "Démarrer avec Windows",
+        "startup_enabled": "Lancer au démarrage de Windows",
+        "statistics": "Statistiques",
+        "usage_count": "Utilisations",
+        "last_used": "Dernière utilisation",
+        "check_updates": "Vérifier les mises à jour",
+        "update_available": "Mise à jour disponible : v{}",
+        "no_update": "Vous avez la dernière version",
+        "auto_backup": "Sauvegarde automatique",
+        "backup_enabled": "Activer la sauvegarde auto",
+        "backup_interval": "Intervalle (heures)",
+        "search_services": "Rechercher un service...",
+        "monday": "Lundi",
+        "tuesday": "Mardi",
+        "wednesday": "Mercredi",
+        "thursday": "Jeudi",
+        "friday": "Vendredi",
+        "saturday": "Samedi",
+        "sunday": "Dimanche",
     },
     "en": {
         "app_title": "SoundLowerer Plus",
@@ -174,12 +217,55 @@ TRANSLATIONS = {
         "tray_quit": "Quit",
         "tray_toggle_all": "Toggle all",
         "minimized_to_tray": "SoundLowerer minimized to system tray",
+        # Advanced mode
+        "advanced_mode": "Advanced mode",
+        "advanced_mode_desc": "Show advanced features",
+        "simple_mode": "Simple mode",
+        "profiles": "Profiles",
+        "save_profile": "Save profile",
+        "load_profile": "Load profile",
+        "delete_profile": "Delete profile",
+        "profile_name": "Profile name",
+        "profile_saved": "Profile '{}' saved",
+        "profile_loaded": "Profile '{}' loaded",
+        "profile_deleted": "Profile '{}' deleted",
+        "schedule": "Schedule",
+        "schedule_enabled": "Enable scheduling",
+        "schedule_start": "Start time",
+        "schedule_end": "End time",
+        "schedule_days": "Active days",
+        "game_detection": "Game detection",
+        "game_detection_enabled": "Enable when a game launches",
+        "game_detection_desc": "Automatically enables this service when a game is detected",
+        "default_volume": "Default volume",
+        "default_volume_enabled": "Set volume on startup",
+        "default_volume_desc": "Resets applications to specified volume on launch",
+        "startup_with_windows": "Start with Windows",
+        "startup_enabled": "Launch at Windows startup",
+        "statistics": "Statistics",
+        "usage_count": "Usage count",
+        "last_used": "Last used",
+        "check_updates": "Check for updates",
+        "update_available": "Update available: v{}",
+        "no_update": "You have the latest version",
+        "auto_backup": "Auto backup",
+        "backup_enabled": "Enable auto backup",
+        "backup_interval": "Interval (hours)",
+        "search_services": "Search services...",
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday",
     }
 }
 
 # Variables globales
 _current_lang = "fr"
 _current_theme = "dark"
+_advanced_mode = False
 
 def tr(key: str) -> str:
     """Retourne la traduction pour la clé donnée"""
@@ -187,6 +273,9 @@ def tr(key: str) -> str:
 
 def is_dark_theme() -> bool:
     return _current_theme == "dark"
+
+def is_advanced_mode() -> bool:
+    return _advanced_mode
 
 
 class TutorialDialog(QDialog):
@@ -290,7 +379,7 @@ class TutorialDialog(QDialog):
                 },
                 {
                     "title": "You're Ready!",
-                    "content": "You now know the basics of SoundLowerer Plus.\n\nOther features:\n• Right-click on a service for more options\n• Export/import your services to share them\n• Access settings via the ⚙ button\n\nEnjoy! 🎵"
+                    "content": "You now know the basics of SoundLowerer Plus.\n\nOther features:\n• Right-click on a service for more options\n• Export/import your services to share them\n• Use keyboard shortcuts: Delete, Enter, Space\n• Drag & drop to reorder services\n• Search services by name\n• Enable Advanced Mode in settings for profiles, statistics, and more!\n\nEnjoy!"
                 }
             ]
         else:
@@ -313,7 +402,7 @@ class TutorialDialog(QDialog):
                 },
                 {
                     "title": "Vous êtes prêt !",
-                    "content": "Vous connaissez maintenant les bases de SoundLowerer Plus.\n\nAutres fonctionnalités :\n• Clic droit sur un service pour plus d'options\n• Exportez/importez vos services pour les partager\n• Accédez aux paramètres via le bouton ⚙\n\nBonne utilisation ! 🎵"
+                    "content": "Vous connaissez maintenant les bases de SoundLowerer Plus.\n\nAutres fonctionnalités :\n• Clic droit sur un service pour plus d'options\n• Exportez/importez vos services pour les partager\n• Utilisez les raccourcis clavier : Suppr, Entrée, Espace\n• Glissez-déposez pour réorganiser les services\n• Recherchez les services par nom\n• Activez le Mode Avancé dans les paramètres pour les profils, statistiques, et plus !\n\nBonne utilisation !"
                 }
             ]
 
@@ -349,11 +438,17 @@ class TutorialDialog(QDialog):
 
 class SettingsDialog(QDialog):
     """Dialogue des paramètres"""
-    def __init__(self, current_lang: str, current_theme: str, close_to_tray: bool = True, parent=None):
+    def __init__(self, current_lang: str, current_theme: str, close_to_tray: bool = True,
+                 advanced_mode: bool = False, startup_with_windows: bool = False,
+                 auto_backup: bool = False, backup_interval: int = 24, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("settings"))
-        self.setMinimumWidth(320)
+        self.setMinimumWidth(400)
         self._close_to_tray = close_to_tray
+        self._advanced_mode = advanced_mode
+        self._startup_with_windows = startup_with_windows
+        self._auto_backup = auto_backup
+        self._backup_interval = backup_interval
 
         # Appliquer le style selon le thème
         if is_dark_theme():
@@ -420,7 +515,49 @@ class SettingsDialog(QDialog):
         self.close_to_tray_chk.setToolTip(tr("close_to_tray_desc"))
         self.close_to_tray_chk.setChecked(self._close_to_tray)
         behavior_layout.addWidget(self.close_to_tray_chk)
+
+        # Mode avancé
+        self.advanced_mode_chk = QCheckBox(tr("advanced_mode"))
+        self.advanced_mode_chk.setToolTip(tr("advanced_mode_desc"))
+        self.advanced_mode_chk.setChecked(self._advanced_mode)
+        self.advanced_mode_chk.stateChanged.connect(self._on_advanced_mode_changed)
+        behavior_layout.addWidget(self.advanced_mode_chk)
+
         layout.addWidget(behavior_group)
+
+        # Options avancées (visibles seulement en mode avancé)
+        self.advanced_group = QGroupBox(tr("advanced_mode"))
+        advanced_layout = QVBoxLayout(self.advanced_group)
+
+        # Démarrage avec Windows
+        self.startup_chk = QCheckBox(tr("startup_enabled"))
+        self.startup_chk.setChecked(self._startup_with_windows)
+        advanced_layout.addWidget(self.startup_chk)
+
+        # Backup automatique
+        backup_row = QHBoxLayout()
+        self.backup_chk = QCheckBox(tr("backup_enabled"))
+        self.backup_chk.setChecked(self._auto_backup)
+        backup_row.addWidget(self.backup_chk)
+
+        self.backup_interval_spin = QSpinBox()
+        self.backup_interval_spin.setRange(1, 168)
+        self.backup_interval_spin.setValue(self._backup_interval)
+        self.backup_interval_spin.setSuffix(" h")
+        backup_row.addWidget(self.backup_interval_spin)
+        backup_row.addStretch()
+
+        advanced_layout.addLayout(backup_row)
+
+        # Bouton vérifier mises à jour
+        self.check_updates_btn = QPushButton(tr("check_updates"))
+        self.check_updates_btn.clicked.connect(self._check_updates)
+        advanced_layout.addWidget(self.check_updates_btn)
+
+        layout.addWidget(self.advanced_group)
+
+        # Afficher/cacher selon le mode
+        self.advanced_group.setVisible(self._advanced_mode)
 
         # Bouton tutoriel
         tutorial_btn = QPushButton("🎓 " + tr("replay_tutorial"))
@@ -449,6 +586,31 @@ class SettingsDialog(QDialog):
         self._tutorial_requested = True
         self.accept()
 
+    def _on_advanced_mode_changed(self, state):
+        """Affiche/cache les options avancées"""
+        self.advanced_group.setVisible(state == Qt.Checked)
+        self.adjustSize()
+
+    def _check_updates(self):
+        """Vérifie les mises à jour sur GitHub"""
+        try:
+            import urllib.request
+            url = "https://api.github.com/repos/BabasGames/SoundLowerer/releases/latest"
+            req = urllib.request.Request(url, headers={'User-Agent': 'SoundLowerer'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                import json
+                data = json.loads(response.read().decode())
+                latest_version = data.get("tag_name", "").lstrip("v")
+                current_version = "1.0.0"  # Version actuelle
+
+                if latest_version and latest_version != current_version:
+                    QMessageBox.information(self, tr("check_updates"),
+                        tr("update_available").format(latest_version))
+                else:
+                    QMessageBox.information(self, tr("check_updates"), tr("no_update"))
+        except Exception as e:
+            QMessageBox.warning(self, tr("check_updates"), f"Erreur: {e}")
+
     def tutorial_requested(self) -> bool:
         return self._tutorial_requested
 
@@ -456,7 +618,11 @@ class SettingsDialog(QDialog):
         return {
             "language": self.lang_combo.currentData(),
             "theme": self.theme_combo.currentData(),
-            "close_to_tray": self.close_to_tray_chk.isChecked()
+            "close_to_tray": self.close_to_tray_chk.isChecked(),
+            "advanced_mode": self.advanced_mode_chk.isChecked(),
+            "startup_with_windows": self.startup_chk.isChecked(),
+            "auto_backup": self.backup_chk.isChecked(),
+            "backup_interval": self.backup_interval_spin.value()
         }
 from audio_backend import unique_apps
 from service import VolumeServiceController
@@ -519,6 +685,7 @@ class ServiceItemWidget(QWidget):
         super().__init__(parent)
         self.index = index
         self._selected = False
+        self._drag_start_pos = None
         self.setMinimumHeight(48)
         self.setCursor(Qt.PointingHandCursor)
         self.setAutoFillBackground(True)
@@ -579,7 +746,26 @@ class ServiceItemWidget(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.clicked.emit(self.index)
+            self._drag_start_pos = event.pos()
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.LeftButton and self._drag_start_pos:
+            # Vérifier si on a bougé assez pour commencer un drag
+            if (event.pos() - self._drag_start_pos).manhattanLength() > 10:
+                self._start_drag()
+        super().mouseMoveEvent(event)
+
+    def _start_drag(self):
+        from PyQt5.QtCore import QMimeData
+        from PyQt5.QtGui import QDrag
+
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        mime_data.setText(str(self.index))
+        drag.setMimeData(mime_data)
+        drag.exec_(Qt.MoveAction)
+        self._drag_start_pos = None
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -588,19 +774,24 @@ class ServiceItemWidget(QWidget):
 
 
 class ServiceListWidget(QWidget):
-    """Liste personnalisée de services"""
+    """Liste personnalisée de services avec support drag & drop"""
     selectionChanged = pyqtSignal(int)
     itemDoubleClicked = pyqtSignal(int)
+    orderChanged = pyqtSignal(int, int)  # Signal émis quand l'ordre change (from_idx, to_idx)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._items: List[ServiceItemWidget] = []
         self._selected_index = -1
+        self._drag_start_pos = None
+        self._drag_item_index = -1
 
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(4, 4, 4, 4)
         self.layout.setSpacing(4)
         self.layout.addStretch()
+
+        self.setAcceptDrops(True)
 
     def clear(self):
         for item in self._items:
@@ -660,6 +851,28 @@ class ServiceListWidget(QWidget):
                 return item.index
         return -1
 
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasText():
+            from_index = int(event.mimeData().text())
+            to_index = self.get_item_at(event.pos())
+
+            if to_index == -1:
+                # Droppé en dehors d'un item, mettre à la fin
+                to_index = len(self._items) - 1
+
+            if from_index != to_index and from_index >= 0 and to_index >= 0:
+                self.orderChanged.emit(from_index, to_index)
+
+            event.acceptProposedAction()
+
     def contextMenuEvent(self, event):
         idx = self.get_item_at(event.pos())
         if idx >= 0:
@@ -678,10 +891,15 @@ class MainWindow(QMainWindow):
         self.data = load_config()
 
         # Charger les paramètres
-        global _current_lang
+        global _current_lang, _advanced_mode
         _current_lang = self.data.get("settings", {}).get("language", "fr")
         self._current_theme = self.data.get("settings", {}).get("theme", "dark")
         self._close_to_tray = self.data.get("settings", {}).get("close_to_tray", True)
+        _advanced_mode = self.data.get("settings", {}).get("advanced_mode", False)
+        self._advanced_mode = _advanced_mode
+        self._startup_with_windows = self.data.get("settings", {}).get("startup_with_windows", False)
+        self._auto_backup = self.data.get("settings", {}).get("auto_backup", False)
+        self._backup_interval = self.data.get("settings", {}).get("backup_interval", 24)
         self._force_quit = False  # Pour distinguer fermeture réelle de minimisation
 
         self.setWindowTitle(tr("app_title"))
@@ -722,6 +940,13 @@ class MainWindow(QMainWindow):
 
         # Appliquer le thème une seconde fois pour les éléments créés après
         self._apply_theme()
+
+        # Initialiser le backup automatique si activé
+        if self._auto_backup:
+            self._setup_auto_backup()
+
+        # Raccourcis clavier dans l'app
+        self._setup_shortcuts()
 
         # Afficher le tutoriel au premier lancement
         if not self.data.get("settings", {}).get("tutorial_shown", False):
@@ -861,6 +1086,12 @@ class MainWindow(QMainWindow):
         self.list_label = QLabel(tr("services"))
         self.list_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #7eb8c9; padding: 12px;")
 
+        # Champ de recherche pour filtrer les services
+        self.search_services_edit = QLineEdit()
+        self.search_services_edit.setPlaceholderText(tr("search_services"))
+        self.search_services_edit.textChanged.connect(self._filter_services)
+        self.search_services_edit.setStyleSheet("margin: 0 8px 8px 8px;")
+
         # Scroll area pour la liste
         scroll_list = QScrollArea()
         scroll_list.setWidgetResizable(True)
@@ -871,12 +1102,14 @@ class MainWindow(QMainWindow):
         self.service_list = ServiceListWidget()
         self.service_list.selectionChanged.connect(self._on_service_selected)
         self.service_list.itemDoubleClicked.connect(self._toggle_service)
+        self.service_list.orderChanged.connect(self._on_service_order_changed)
         self.service_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.service_list.customContextMenuRequested.connect(self._show_context_menu)
 
         scroll_list.setWidget(self.service_list)
 
         left_layout.addWidget(self.list_label)
+        left_layout.addWidget(self.search_services_edit)
         left_layout.addWidget(scroll_list)
 
         central.addWidget(left_widget)
@@ -1093,6 +1326,48 @@ class MainWindow(QMainWindow):
 
         rv.addWidget(grp_actions)
 
+        # === Groupe: Statistiques (mode avancé) ===
+        self.grp_stats = QGroupBox(tr("statistics"))
+        grp_stats_layout = QVBoxLayout(self.grp_stats)
+        grp_stats_layout.setSpacing(8)
+
+        stats_row1 = QHBoxLayout()
+        stats_row1.addWidget(QLabel(tr("usage_count") + ":"))
+        self.usage_count_label = QLabel("0")
+        self.usage_count_label.setStyleSheet("font-weight: bold;")
+        stats_row1.addWidget(self.usage_count_label)
+        stats_row1.addStretch()
+
+        stats_row2 = QHBoxLayout()
+        stats_row2.addWidget(QLabel(tr("last_used") + ":"))
+        self.last_used_label = QLabel("-")
+        stats_row2.addWidget(self.last_used_label)
+        stats_row2.addStretch()
+
+        grp_stats_layout.addLayout(stats_row1)
+        grp_stats_layout.addLayout(stats_row2)
+
+        rv.addWidget(self.grp_stats)
+
+        # Cacher le groupe stats si pas en mode avancé
+        self.grp_stats.setVisible(self._advanced_mode)
+
+        # === Groupe: Profils (mode avancé) ===
+        self.grp_profiles = QGroupBox(tr("profiles"))
+        grp_profiles_layout = QHBoxLayout(self.grp_profiles)
+
+        self.save_profile_btn = QPushButton(tr("save_profile"))
+        self.save_profile_btn.clicked.connect(self._save_profile)
+
+        self.load_profile_btn = QPushButton(tr("load_profile"))
+        self.load_profile_btn.clicked.connect(self._load_profile)
+
+        grp_profiles_layout.addWidget(self.save_profile_btn)
+        grp_profiles_layout.addWidget(self.load_profile_btn)
+
+        rv.addWidget(self.grp_profiles)
+        self.grp_profiles.setVisible(self._advanced_mode)
+
         rv.addStretch(1)
 
         scroll.setWidget(right)
@@ -1118,6 +1393,20 @@ class MainWindow(QMainWindow):
         for idx in range(len(self.services)):
             is_active = idx in self.controllers
             self.service_list.update_status(idx, is_active)
+
+        # Mettre à jour l'icône du tray selon l'état des services
+        any_active = len(self.controllers) > 0
+        self._update_tray_icon(any_active)
+
+    def _update_tray_icon(self, active: bool):
+        """Met à jour l'icône du tray selon l'état actif"""
+        if active:
+            icon_path = os.path.join(resource_path("icons"), "tray_active.svg")
+        else:
+            icon_path = os.path.join(resource_path("icons"), "tray.svg")
+
+        if os.path.exists(icon_path):
+            self.tray.setIcon(QIcon(icon_path))
 
     def _on_service_selected(self, idx: int):
         if idx < 0 or idx >= len(self.services):
@@ -1158,6 +1447,20 @@ class MainWindow(QMainWindow):
             # Cocher les cibles
             for name, cb in self.targets_checkboxes.items():
                 cb.setChecked(name in targets)
+
+        # Charger les statistiques (mode avancé)
+        if self._advanced_mode and hasattr(self, 'usage_count_label'):
+            self.usage_count_label.setText(str(svc.get("usage_count", 0)))
+            last_used = svc.get("last_used", "")
+            if last_used:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(last_used)
+                    self.last_used_label.setText(dt.strftime("%d/%m/%Y %H:%M"))
+                except:
+                    self.last_used_label.setText("-")
+            else:
+                self.last_used_label.setText("-")
 
     def _toggle_service(self, idx: int):
         """Double-clic pour démarrer/arrêter"""
@@ -1503,6 +1806,11 @@ class MainWindow(QMainWindow):
             return
 
         s = self.services[idx]
+
+        # Callback pour les statistiques (mode avancé)
+        def on_use():
+            self._record_service_usage(idx)
+
         ctrl = VolumeServiceController(
             name=s.get("name", ""),
             targets=s.get("targets", []),
@@ -1511,7 +1819,8 @@ class MainWindow(QMainWindow):
             mode=s.get("mode", "hold"),
             fade_ms=int(s.get("fade_ms", 300)),
             curve=s.get("curve", "linear"),
-            all_except=bool(s.get("all_except", False))
+            all_except=bool(s.get("all_except", False)),
+            on_use_callback=on_use if self._advanced_mode else None
         )
         self.controllers[idx] = ctrl
         ctrl.start()
@@ -1635,12 +1944,16 @@ class MainWindow(QMainWindow):
     # --- Paramètres ---
     def _open_settings(self):
         """Ouvre le dialogue des paramètres"""
-        global _current_lang
+        global _current_lang, _advanced_mode
 
         dialog = SettingsDialog(
             current_lang=_current_lang,
             current_theme=self._current_theme,
             close_to_tray=self._close_to_tray,
+            advanced_mode=self._advanced_mode,
+            startup_with_windows=self._startup_with_windows,
+            auto_backup=self._auto_backup,
+            backup_interval=self._backup_interval,
             parent=self
         )
 
@@ -1666,6 +1979,30 @@ class MainWindow(QMainWindow):
             if settings["close_to_tray"] != self._close_to_tray:
                 self._close_to_tray = settings["close_to_tray"]
                 self.data.setdefault("settings", {})["close_to_tray"] = self._close_to_tray
+                self._dirty = True
+
+            # Appliquer mode avancé
+            if settings["advanced_mode"] != self._advanced_mode:
+                self._advanced_mode = settings["advanced_mode"]
+                _advanced_mode = self._advanced_mode
+                self.data.setdefault("settings", {})["advanced_mode"] = self._advanced_mode
+                self._dirty = True
+                self._update_advanced_ui()
+
+            # Appliquer démarrage avec Windows
+            if settings["startup_with_windows"] != self._startup_with_windows:
+                self._startup_with_windows = settings["startup_with_windows"]
+                self.data.setdefault("settings", {})["startup_with_windows"] = self._startup_with_windows
+                self._apply_startup_with_windows()
+                self._dirty = True
+
+            # Appliquer backup auto
+            if settings["auto_backup"] != self._auto_backup or settings["backup_interval"] != self._backup_interval:
+                self._auto_backup = settings["auto_backup"]
+                self._backup_interval = settings["backup_interval"]
+                self.data.setdefault("settings", {})["auto_backup"] = self._auto_backup
+                self.data.setdefault("settings", {})["backup_interval"] = self._backup_interval
+                self._setup_auto_backup()
                 self._dirty = True
 
             # Rafraîchir l'UI si la langue a changé
@@ -1776,7 +2113,275 @@ class MainWindow(QMainWindow):
             self.open_act.setText(tr("tray_open"))
             self.quit_act.setText(tr("tray_quit"))
 
+        # Champ de recherche
+        if hasattr(self, 'search_services_edit'):
+            self.search_services_edit.setPlaceholderText(tr("search_services"))
+
         # Rafraîchir la liste des services pour mettre à jour "Pas de raccourci"
         self._load_list()
         if self._selected_index >= 0:
             self.service_list.select(self._selected_index)
+
+    # --- Drag & Drop ---
+    def _on_service_order_changed(self, from_idx: int, to_idx: int):
+        """Réorganise les services après un drag & drop"""
+        if from_idx == to_idx:
+            return
+
+        # Arrêter les services actifs pour éviter les problèmes d'index
+        active_services = set(self.controllers.keys())
+        for idx in list(self.controllers.keys()):
+            self.controllers[idx].stop()
+        self.controllers.clear()
+
+        # Réorganiser la liste
+        service = self.services.pop(from_idx)
+        self.services.insert(to_idx, service)
+
+        # Recharger la liste
+        self._load_list()
+        self._dirty = True
+
+        # Redémarrer les services qui étaient actifs (avec nouveaux index)
+        for old_idx in active_services:
+            if old_idx == from_idx:
+                new_idx = to_idx
+            elif old_idx > from_idx and old_idx <= to_idx:
+                new_idx = old_idx - 1
+            elif old_idx < from_idx and old_idx >= to_idx:
+                new_idx = old_idx + 1
+            else:
+                new_idx = old_idx
+
+            if new_idx < len(self.services):
+                self._start_at_index(new_idx)
+
+        # Sélectionner l'item déplacé
+        self.service_list.select(to_idx)
+
+    # --- Statistiques ---
+    def _record_service_usage(self, idx: int):
+        """Enregistre une utilisation du service"""
+        if idx < 0 or idx >= len(self.services):
+            return
+
+        from datetime import datetime
+        svc = self.services[idx]
+
+        # Incrémenter le compteur
+        svc["usage_count"] = svc.get("usage_count", 0) + 1
+
+        # Enregistrer la dernière utilisation
+        svc["last_used"] = datetime.now().isoformat()
+
+        self._dirty = True
+
+    # --- Recherche de services ---
+    def _filter_services(self, text: str):
+        """Filtre la liste des services selon le texte de recherche"""
+        text = text.lower()
+        self.service_list.clear()
+
+        for idx, svc in enumerate(self.services):
+            name = svc.get("name", "").lower()
+            hotkey = svc.get("hotkey", "").lower()
+
+            # Afficher si le texte est dans le nom ou le raccourci
+            if not text or text in name or text in hotkey:
+                is_active = idx in self.controllers
+                self.service_list.add_item(idx, svc.get("name", "Service sans nom"),
+                                          svc.get("hotkey", ""), is_active)
+
+    # --- Raccourcis clavier ---
+    def _setup_shortcuts(self):
+        """Configure les raccourcis clavier de l'application"""
+        # Suppr pour supprimer le service sélectionné
+        delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
+        delete_shortcut.activated.connect(self._delete_selected)
+
+        # Entrée pour démarrer/arrêter le service sélectionné
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self._toggle_selected_service)
+
+        # Espace aussi pour démarrer/arrêter
+        space_shortcut = QShortcut(QKeySequence(Qt.Key_Space), self)
+        space_shortcut.activated.connect(self._toggle_selected_service)
+
+    def _toggle_selected_service(self):
+        """Démarre ou arrête le service sélectionné"""
+        if self._selected_index >= 0:
+            self._toggle_service(self._selected_index)
+
+    # --- Mode avancé ---
+    def _update_advanced_ui(self):
+        """Met à jour l'interface selon le mode avancé"""
+        # Afficher/cacher les groupes avancés
+        if hasattr(self, 'grp_stats'):
+            self.grp_stats.setVisible(self._advanced_mode)
+        if hasattr(self, 'grp_profiles'):
+            self.grp_profiles.setVisible(self._advanced_mode)
+
+    # --- Profils ---
+    def _get_profiles_dir(self):
+        """Retourne le dossier des profils"""
+        profiles_dir = os.path.join(os.path.dirname(resource_path(".")), "profiles")
+        os.makedirs(profiles_dir, exist_ok=True)
+        return profiles_dir
+
+    def _save_profile(self):
+        """Sauvegarde les services actuels dans un profil"""
+        from PyQt5.QtWidgets import QInputDialog
+
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(tr("save_profile"))
+        dialog.setLabelText(tr("profile_name") + ":")
+        if is_dark_theme():
+            dialog.setStyleSheet("""
+                QInputDialog { background: #1e1e1e; }
+                QLabel { color: #e0e0e0; }
+                QLineEdit { background: #2a2a2a; color: #e0e0e0; border: 1px solid #3a3a3a; border-radius: 4px; padding: 6px; }
+                QPushButton { background: #2a2a2a; color: #e0e0e0; border: 1px solid #3a3a3a; border-radius: 4px; padding: 6px 12px; }
+                QPushButton:hover { background: #353535; }
+            """)
+
+        ok = dialog.exec_()
+        name = dialog.textValue()
+        if not ok or not name.strip():
+            return
+
+        name = name.strip()
+        profiles_dir = self._get_profiles_dir()
+        profile_path = os.path.join(profiles_dir, f"{name}.json")
+
+        try:
+            import json
+            profile_data = {
+                "name": name,
+                "services": self.services
+            }
+            with open(profile_path, 'w', encoding='utf-8') as f:
+                json.dump(profile_data, f, indent=2, ensure_ascii=False)
+
+            self.statusBar().showMessage(tr("profile_saved").format(name), 3000)
+        except Exception as e:
+            QMessageBox.warning(self, tr("profiles"), f"Erreur: {e}")
+
+    def _load_profile(self):
+        """Charge un profil"""
+        profiles_dir = self._get_profiles_dir()
+
+        # Lister les profils existants
+        profiles = [f[:-5] for f in os.listdir(profiles_dir) if f.endswith('.json')]
+
+        if not profiles:
+            QMessageBox.information(self, tr("profiles"),
+                "Aucun profil" if _current_lang == "fr" else "No profiles")
+            return
+
+        from PyQt5.QtWidgets import QInputDialog
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(tr("load_profile"))
+        dialog.setLabelText(tr("profile_name") + ":")
+        dialog.setComboBoxItems(profiles)
+        dialog.setComboBoxEditable(False)
+        if is_dark_theme():
+            dialog.setStyleSheet("""
+                QInputDialog { background: #1e1e1e; }
+                QLabel { color: #e0e0e0; }
+                QComboBox { background: #2a2a2a; color: #e0e0e0; border: 1px solid #3a3a3a; border-radius: 4px; padding: 6px; }
+                QComboBox QAbstractItemView { background: #2a2a2a; color: #e0e0e0; selection-background-color: #3d6a7a; }
+                QPushButton { background: #2a2a2a; color: #e0e0e0; border: 1px solid #3a3a3a; border-radius: 4px; padding: 6px 12px; }
+                QPushButton:hover { background: #353535; }
+            """)
+
+        ok = dialog.exec_()
+        name = dialog.textValue()
+        if not ok:
+            return
+
+        profile_path = os.path.join(profiles_dir, f"{name}.json")
+
+        try:
+            import json
+            with open(profile_path, 'r', encoding='utf-8') as f:
+                profile_data = json.load(f)
+
+            # Arrêter tous les services
+            for idx in list(self.controllers.keys()):
+                self.controllers[idx].stop()
+            self.controllers.clear()
+
+            # Charger les services
+            self.services = profile_data.get("services", [])
+            self._load_list()
+            self._dirty = True
+
+            self.statusBar().showMessage(tr("profile_loaded").format(name), 3000)
+        except Exception as e:
+            QMessageBox.warning(self, tr("profiles"), f"Erreur: {e}")
+
+    def _apply_startup_with_windows(self):
+        """Configure le démarrage automatique avec Windows"""
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        app_name = "SoundLowerer"
+
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
+
+            if self._startup_with_windows:
+                # Ajouter au démarrage
+                if hasattr(sys, '_MEIPASS'):
+                    # Mode exe
+                    exe_path = sys.executable
+                else:
+                    # Mode développement
+                    exe_path = f'"{sys.executable}" "{os.path.abspath(__file__)}"'
+                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
+            else:
+                # Supprimer du démarrage
+                try:
+                    winreg.DeleteValue(key, app_name)
+                except FileNotFoundError:
+                    pass
+
+            winreg.CloseKey(key)
+        except Exception as e:
+            print(f"Erreur lors de la configuration du démarrage: {e}")
+
+    def _setup_auto_backup(self):
+        """Configure la sauvegarde automatique"""
+        if hasattr(self, 'backup_timer'):
+            self.backup_timer.stop()
+
+        if self._auto_backup:
+            self.backup_timer = QTimer(self)
+            self.backup_timer.setInterval(self._backup_interval * 3600 * 1000)  # Heures en ms
+            self.backup_timer.timeout.connect(self._do_backup)
+            self.backup_timer.start()
+
+    def _do_backup(self):
+        """Effectue une sauvegarde de la configuration"""
+        import shutil
+        from datetime import datetime
+
+        backup_dir = os.path.join(os.path.dirname(resource_path(".")), "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+
+        # Nom du fichier de backup avec timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = os.path.join(backup_dir, f"config_backup_{timestamp}.json")
+
+        try:
+            # Sauvegarder la config actuelle
+            import json
+            with open(backup_file, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=2, ensure_ascii=False)
+
+            # Garder seulement les 10 derniers backups
+            backups = sorted([f for f in os.listdir(backup_dir) if f.startswith("config_backup_")])
+            while len(backups) > 10:
+                os.remove(os.path.join(backup_dir, backups.pop(0)))
+
+        except Exception as e:
+            print(f"Erreur lors du backup: {e}")
