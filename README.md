@@ -75,7 +75,7 @@ pyinstaller soundlowerer_plus.spec --clean
 - keyboard
 - pywin32
 
-## Screenshots
+## Screenshot
 
 <img width="1089" height="993" alt="SoundLowerer Plus 04_02_2026 18_12_01" src="https://github.com/user-attachments/assets/c5162dae-39ff-40ef-bf46-d44ebda41ac1" />
 
