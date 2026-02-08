@@ -1210,7 +1210,7 @@ class ServiceListWidget(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QIcon(os.path.join(resource_path("icons"), "tray.svg")))
+        self.setWindowIcon(QIcon(os.path.join(resource_path("icons"), "app.ico")))
 
         self.data = load_config()
 
