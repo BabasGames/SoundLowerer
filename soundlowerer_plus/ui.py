@@ -7,8 +7,8 @@ from PyQt5.QtWidgets import (
     QMessageBox, QGroupBox, QSlider, QScrollArea, QFrame, QApplication, QSizePolicy,
     QDialog, QDialogButtonBox, QFileDialog
 )
-from PyQt5.QtCore import Qt, QTimer, QSize, pyqtSignal
-from PyQt5.QtGui import QIcon, QColor, QBrush, QFont, QPainter, QPen, QKeySequence
+from PyQt5.QtCore import Qt, QTimer, QSize, pyqtSignal, QPoint, QRect
+from PyQt5.QtGui import QIcon, QColor, QBrush, QFont, QPainter, QPen, QKeySequence, QRadialGradient
 from PyQt5.QtWidgets import QShortcut
 
 
@@ -69,6 +69,13 @@ TRANSLATIONS = {
         "missing_hotkey": "Raccourci manquant.",
         "invalid_hotkey": "Format de raccourci invalide: {}",
         "hotkey_conflict": "Conflit: {} déjà utilisé par '{}'.",
+        "duplicate_name": "Un service nommé '{}' existe déjà.",
+        "schedule_invalid_time": "L'heure de fin doit être après l'heure de début.",
+        "tray_stop_all": "Tout arrêter",
+        "stop_all_done": "{} service(s) arrêté(s)",
+        "reset_defaults": "Réinitialiser",
+        "reset_defaults_confirm": "Réinitialiser tous les paramètres par défaut ?",
+        "reset_defaults_done": "Paramètres réinitialisés",
         "export_success": "Service exporté: {}",
         "import_success": "Service '{}' importé",
         "import_error": "Erreur lors de l'import",
@@ -111,9 +118,10 @@ TRANSLATIONS = {
         "schedule_start": "Heure de début",
         "schedule_end": "Heure de fin",
         "schedule_days": "Jours actifs",
-        "game_detection": "Détection de jeux",
-        "game_detection_enabled": "Activer quand un jeu se lance",
-        "game_detection_desc": "Active automatiquement ce service quand un jeu est détecté",
+        "auto_activation": "Auto-activation",
+        "auto_activation_enabled": "Activer quand une application se lance",
+        "auto_activation_desc": "Active automatiquement ce service quand une des applications ci-dessous est en cours",
+        "auto_activation_filter": "Filtrer...",
         "default_volume": "Volume par défaut",
         "default_volume_enabled": "Définir le volume au démarrage",
         "default_volume_desc": "Remet les applications au volume spécifié au lancement",
@@ -141,8 +149,9 @@ TRANSLATIONS = {
         "default_vol_applied": "Volume par défaut appliqué à {} application(s)",
         "schedule_active": "Planification active",
         "schedule_inactive": "Planification inactive",
-        "game_detected": "Jeu détecté: {}",
+        "app_detected": "Application détectée: {}",
         "service_auto_started": "Service '{}' démarré automatiquement",
+        "service_auto_stopped": "Service '{}' arrêté automatiquement",
         "select_apps": "Sélectionner les applications...",
     },
     "en": {
@@ -200,6 +209,13 @@ TRANSLATIONS = {
         "missing_hotkey": "Shortcut missing.",
         "invalid_hotkey": "Invalid shortcut format: {}",
         "hotkey_conflict": "Conflict: {} already used by '{}'.",
+        "duplicate_name": "A service named '{}' already exists.",
+        "schedule_invalid_time": "End time must be after start time.",
+        "tray_stop_all": "Stop all",
+        "stop_all_done": "{} service(s) stopped",
+        "reset_defaults": "Reset",
+        "reset_defaults_confirm": "Reset all settings to defaults?",
+        "reset_defaults_done": "Settings reset to defaults",
         "export_success": "Service exported: {}",
         "import_success": "Service '{}' imported",
         "import_error": "Import error",
@@ -242,9 +258,10 @@ TRANSLATIONS = {
         "schedule_start": "Start time",
         "schedule_end": "End time",
         "schedule_days": "Active days",
-        "game_detection": "Game detection",
-        "game_detection_enabled": "Enable when a game launches",
-        "game_detection_desc": "Automatically enables this service when a game is detected",
+        "auto_activation": "Auto-activation",
+        "auto_activation_enabled": "Enable when an application launches",
+        "auto_activation_desc": "Automatically enables this service when one of the applications below is running",
+        "auto_activation_filter": "Filter...",
         "default_volume": "Default volume",
         "default_volume_enabled": "Set volume on startup",
         "default_volume_desc": "Resets applications to specified volume on launch",
@@ -272,8 +289,9 @@ TRANSLATIONS = {
         "default_vol_applied": "Default volume applied to {} application(s)",
         "schedule_active": "Schedule active",
         "schedule_inactive": "Schedule inactive",
-        "game_detected": "Game detected: {}",
+        "app_detected": "Application detected: {}",
         "service_auto_started": "Service '{}' auto-started",
+        "service_auto_stopped": "Service '{}' auto-stopped",
         "select_apps": "Select applications...",
     }
 }
@@ -383,15 +401,15 @@ class TutorialDialog(QDialog):
                 },
                 {
                     "title": "Step 1: Create a Service",
-                    "content": "A 'service' is a volume reduction rule.\n\n1. Give it a name (e.g., 'Lower Spotify')\n\n2. Select the target applications whose volume should be reduced\n\n3. Configure a keyboard shortcut by clicking 'Record...' and pressing your desired key combination"
+                    "content": "A 'service' is a volume reduction rule.\n\n1. Give it a name (e.g., 'Lower Spotify')\n\n2. Configure a keyboard shortcut by clicking 'Record...' and pressing your desired key combination\n\n3. Select the target applications whose volume should be reduced"
                 },
                 {
                     "title": "Step 2: Audio Settings",
-                    "content": "• Reduction: How much to lower the volume (75% = volume goes to 25%)\n\n• Mode:\n  - Hold: Keep the key pressed to reduce\n  - Toggle: Press once to reduce, press again to restore\n\n• Fade: Transition duration in milliseconds\n\n• Curve: Linear (constant) or Expo (more natural)"
+                    "content": "• Reduction: How much to lower the volume (75% reduces the volume by 75% of its current level)\n\n• Mode:\n  - Hold: Keep the key pressed to reduce\n  - Toggle: Press once to reduce, press again to restore\n\n• Fade: Transition duration in milliseconds\n\n• Curve: Linear (constant) or Expo (more natural)"
                 },
                 {
                     "title": "Step 3: Start the Service",
-                    "content": "Once configured:\n\n1. Click 'New service' to add it to the list\n\n2. Double-click on a service or use the ▶ button to start it\n\n3. The indicator turns green when active\n\n4. Use your shortcut to control the volume!\n\nTip: Services are automatically restored when you reopen the app."
+                    "content": "Once configured:\n\n1. Click 'New service' to add it to the list\n   (action buttons are always visible at the bottom)\n\n2. Double-click on a service to start it\n\n3. The indicator turns green when active\n\n4. Use your shortcut to control the volume!\n\nTip: Services are automatically restored when you reopen the app."
                 },
                 {
                     "title": "You're Ready!",
@@ -406,15 +424,15 @@ class TutorialDialog(QDialog):
                 },
                 {
                     "title": "Étape 1 : Créer un Service",
-                    "content": "Un 'service' est une règle de réduction de volume.\n\n1. Donnez-lui un nom (ex: 'Baisser Spotify')\n\n2. Sélectionnez les applications cibles dont le volume doit être réduit\n\n3. Configurez un raccourci clavier en cliquant sur 'Enregistrer...' et en appuyant sur la combinaison souhaitée"
+                    "content": "Un 'service' est une règle de réduction de volume.\n\n1. Donnez-lui un nom (ex: 'Baisser Spotify')\n\n2. Configurez un raccourci clavier en cliquant sur 'Enregistrer...' et en appuyant sur la combinaison souhaitée\n\n3. Sélectionnez les applications cibles dont le volume doit être réduit"
                 },
                 {
                     "title": "Étape 2 : Paramètres Audio",
-                    "content": "• Réduction : De combien baisser le volume (75% = le volume passe à 25%)\n\n• Mode :\n  - Hold : Maintenir la touche appuyée pour réduire\n  - Toggle : Appuyer une fois pour réduire, encore pour restaurer\n\n• Fondu : Durée de la transition en millisecondes\n\n• Courbe : Linéaire (constante) ou Expo (plus naturelle)"
+                    "content": "• Réduction : De combien baisser le volume (75% réduit le volume de 75% par rapport à son niveau actuel)\n\n• Mode :\n  - Hold : Maintenir la touche appuyée pour réduire\n  - Toggle : Appuyer une fois pour réduire, encore pour restaurer\n\n• Fondu : Durée de la transition en millisecondes\n\n• Courbe : Linéaire (constante) ou Expo (plus naturelle)"
                 },
                 {
                     "title": "Étape 3 : Démarrer le Service",
-                    "content": "Une fois configuré :\n\n1. Cliquez sur 'Nouveau service' pour l'ajouter à la liste\n\n2. Double-cliquez sur un service ou utilisez le bouton ▶ pour le démarrer\n\n3. L'indicateur devient vert quand il est actif\n\n4. Utilisez votre raccourci pour contrôler le volume !\n\nAstuce : Les services sont automatiquement restaurés quand vous rouvrez l'app."
+                    "content": "Une fois configuré :\n\n1. Cliquez sur 'Nouveau service' pour l'ajouter à la liste\n   (les boutons d'action sont toujours visibles en bas)\n\n2. Double-cliquez sur un service pour le démarrer\n\n3. L'indicateur devient vert quand il est actif\n\n4. Utilisez votre raccourci pour contrôler le volume !\n\nAstuce : Les services sont automatiquement restaurés quand vous rouvrez l'app."
                 },
                 {
                     "title": "Vous êtes prêt !",
@@ -458,8 +476,7 @@ class SettingsDialog(QDialog):
                  advanced_mode: bool = False, startup_with_windows: bool = False,
                  auto_backup: bool = False, backup_interval: int = 24,
                  default_volume_enabled: bool = False, default_volume_level: int = 100,
-                 default_volume_apps: list = None, game_detection_enabled: bool = False,
-                 parent=None):
+                 default_volume_apps: list = None, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("settings"))
         self.setMinimumWidth(400)
@@ -471,7 +488,6 @@ class SettingsDialog(QDialog):
         self._default_volume_enabled = default_volume_enabled
         self._default_volume_level = default_volume_level
         self._default_volume_apps = default_volume_apps or []
-        self._game_detection_enabled = game_detection_enabled
 
         # Appliquer le style selon le thème
         if is_dark_theme():
@@ -615,25 +631,18 @@ class SettingsDialog(QDialog):
         layout.addWidget(self.default_vol_group)
         self.default_vol_group.setVisible(self._advanced_mode)
 
-        # === Détection de jeux ===
-        self.game_detection_group = QGroupBox(tr("game_detection"))
-        game_detect_layout = QVBoxLayout(self.game_detection_group)
-
-        self.game_detection_chk = QCheckBox(tr("game_detection_enabled"))
-        self.game_detection_chk.setToolTip(tr("game_detection_desc"))
-        self.game_detection_chk.setChecked(self._game_detection_enabled)
-        game_detect_layout.addWidget(self.game_detection_chk)
-
-        layout.addWidget(self.game_detection_group)
-        self.game_detection_group.setVisible(self._advanced_mode)
-
         # Afficher/cacher selon le mode
         self.advanced_group.setVisible(self._advanced_mode)
 
         # Bouton tutoriel
-        tutorial_btn = QPushButton("🎓 " + tr("replay_tutorial"))
+        tutorial_btn = QPushButton(tr("replay_tutorial"))
         tutorial_btn.clicked.connect(self._show_tutorial)
         layout.addWidget(tutorial_btn)
+
+        # Bouton réinitialiser
+        reset_btn = QPushButton(tr("reset_defaults"))
+        reset_btn.clicked.connect(self._reset_defaults)
+        layout.addWidget(reset_btn)
 
         layout.addSpacing(8)
 
@@ -652,10 +661,29 @@ class SettingsDialog(QDialog):
         layout.addLayout(btn_layout)
 
         self._tutorial_requested = False
+        self._reset_requested = False
 
     def _show_tutorial(self):
         self._tutorial_requested = True
         self.accept()
+
+    def _reset_defaults(self):
+        reply = QMessageBox.question(self, tr("reset_defaults"),
+                                     tr("reset_defaults_confirm"),
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.lang_combo.setCurrentIndex(self.lang_combo.findData("fr"))
+            self.theme_combo.setCurrentIndex(self.theme_combo.findData("dark"))
+            self.close_to_tray_chk.setChecked(True)
+            self.advanced_mode_chk.setChecked(False)
+            self.startup_chk.setChecked(False)
+            self.backup_chk.setChecked(False)
+            self.backup_interval_spin.setValue(24)
+            self.default_vol_chk.setChecked(False)
+            self.default_vol_slider.setValue(100)
+            self._default_volume_apps = []
+            self.default_vol_apps_label.setText("-")
+            self._reset_requested = True
 
     def _on_advanced_mode_changed(self, state):
         """Affiche/cache les options avancées"""
@@ -663,8 +691,6 @@ class SettingsDialog(QDialog):
         self.advanced_group.setVisible(visible)
         if hasattr(self, 'default_vol_group'):
             self.default_vol_group.setVisible(visible)
-        if hasattr(self, 'game_detection_group'):
-            self.game_detection_group.setVisible(visible)
         self.adjustSize()
 
     def _select_default_vol_apps(self):
@@ -755,6 +781,9 @@ class SettingsDialog(QDialog):
     def tutorial_requested(self) -> bool:
         return self._tutorial_requested
 
+    def reset_requested(self) -> bool:
+        return self._reset_requested
+
     def get_settings(self) -> Dict:
         return {
             "language": self.lang_combo.currentData(),
@@ -767,7 +796,6 @@ class SettingsDialog(QDialog):
             "default_volume_enabled": self.default_vol_chk.isChecked(),
             "default_volume_level": self.default_vol_slider.value(),
             "default_volume_apps": self._default_volume_apps,
-            "game_detection_enabled": self.game_detection_chk.isChecked()
         }
 from audio_backend import unique_apps
 from service import VolumeServiceController
@@ -796,29 +824,136 @@ APP_PRESETS = {
 }
 
 
+class ResizableScrollArea(QWidget):
+    """ScrollArea avec un handle en bas pour redimensionner verticalement par drag."""
+
+    def __init__(self, scroll_area: QScrollArea, min_h: int = 80, default_h: int = 150, parent=None):
+        super().__init__(parent)
+        self._scroll = scroll_area
+        self._min_h = min_h
+        self._current_h = default_h
+        self._dragging = False
+        self._drag_start_y = 0
+        self._drag_start_h = 0
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Retirer les contraintes de taille de la scroll area
+        self._scroll.setMinimumHeight(0)
+        self._scroll.setMaximumHeight(16777215)
+        self._scroll.setFixedHeight(self._current_h)
+
+        layout.addWidget(self._scroll)
+
+        # Handle de drag
+        self._handle = QWidget()
+        self._handle.setFixedHeight(8)
+        self._handle.setCursor(Qt.SizeVerCursor)
+        self._handle.installEventFilter(self)
+        layout.addWidget(self._handle)
+
+        self._update_handle_style()
+
+    def _update_handle_style(self):
+        if is_dark_theme():
+            self._handle.setStyleSheet(
+                "background: #2a2a2a; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;"
+            )
+        else:
+            self._handle.setStyleSheet(
+                "background: #e0e0e0; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;"
+            )
+
+    def refresh_style(self):
+        self._update_handle_style()
+
+    def eventFilter(self, obj, event):
+        if obj is self._handle:
+            if event.type() == event.MouseButtonPress and event.button() == Qt.LeftButton:
+                self._dragging = True
+                self._drag_start_y = event.globalPos().y()
+                self._drag_start_h = self._current_h
+                return True
+            elif event.type() == event.MouseMove and self._dragging:
+                delta = event.globalPos().y() - self._drag_start_y
+                new_h = max(self._min_h, self._drag_start_h + delta)
+                self._current_h = new_h
+                self._scroll.setFixedHeight(new_h)
+                return True
+            elif event.type() == event.MouseButtonRelease and self._dragging:
+                self._dragging = False
+                return True
+        return super().eventFilter(obj, event)
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        # Dessiner les traits de grip sur le handle
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        handle_rect = self._handle.geometry()
+        cx = handle_rect.center().x()
+        cy = handle_rect.center().y()
+        color = QColor("#555") if is_dark_theme() else QColor("#bbb")
+        painter.setPen(QPen(color, 1))
+        for dx in [-8, 0, 8]:
+            painter.drawLine(cx + dx - 2, cy, cx + dx + 2, cy)
+
+
 class StatusIndicator(QWidget):
-    """Petit rond coloré pour indiquer le statut"""
+    """Rond coloré avec glow quand actif, pulse quand utilisé"""
     def __init__(self, active=False, parent=None):
         super().__init__(parent)
         self._active = active
-        self.setFixedSize(12, 12)
+        self._pulse = False
+        self._pulse_timer = None
+        self.setFixedSize(18, 18)
 
     def set_active(self, active: bool):
         self._active = active
+        self.update()
+
+    def pulse(self):
+        """Déclenche un bref flash lumineux."""
+        self._pulse = True
+        self.update()
+        if self._pulse_timer is None:
+            self._pulse_timer = QTimer(self)
+            self._pulse_timer.setSingleShot(True)
+            self._pulse_timer.timeout.connect(self._end_pulse)
+        self._pulse_timer.start(400)
+
+    def _end_pulse(self):
+        self._pulse = False
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         if self._active:
-            painter.setBrush(QColor("#22c55e"))  # Vert
+            # Glow effect (plus grand en pulse)
+            glow = QRadialGradient(9, 9, 9)
+            if self._pulse:
+                glow.setColorAt(0, QColor(34, 197, 94, 200))
+                glow.setColorAt(1, QColor(34, 197, 94, 0))
+            else:
+                glow.setColorAt(0, QColor(34, 197, 94, 120))
+                glow.setColorAt(1, QColor(34, 197, 94, 0))
+            painter.setBrush(glow)
+            painter.setPen(Qt.NoPen)
+            painter.drawEllipse(0, 0, 18, 18)
+            # Core dot
+            color = QColor("#4ade80") if self._pulse else QColor("#22c55e")
+            painter.setBrush(color)
+            painter.drawEllipse(4, 4, 10, 10)
         else:
             if is_dark_theme():
-                painter.setBrush(QColor("#525252"))  # Gris foncé
+                painter.setBrush(QColor("#525252"))
             else:
-                painter.setBrush(QColor("#d0d0d0"))  # Gris clair
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(1, 1, 10, 10)
+                painter.setBrush(QColor("#d0d0d0"))
+            painter.setPen(Qt.NoPen)
+            painter.drawEllipse(4, 4, 10, 10)
 
 
 class ServiceItemWidget(QWidget):
@@ -826,18 +961,20 @@ class ServiceItemWidget(QWidget):
     clicked = pyqtSignal(int)
     doubleClicked = pyqtSignal(int)
 
-    def __init__(self, index: int, name: str, hotkey: str, active: bool = False, parent=None):
+    def __init__(self, index: int, name: str, hotkey: str, active: bool = False,
+                 reduction: int = 75, mode: str = "hold", parent=None):
         super().__init__(parent)
         self.index = index
         self._selected = False
+        self._active = active
         self._drag_start_pos = None
-        self.setMinimumHeight(48)
+        self.setMinimumHeight(52)
         self.setCursor(Qt.PointingHandCursor)
         self.setAutoFillBackground(True)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 8, 10, 8)
+        layout.setSpacing(10)
 
         # Indicateur de statut
         self.indicator = StatusIndicator(active)
@@ -848,17 +985,27 @@ class ServiceItemWidget(QWidget):
         info_layout.setSpacing(2)
 
         self.name_label = QLabel(name)
-        self.hotkey_label = QLabel(hotkey if hotkey else tr("no_hotkey"))
+        hotkey_text = hotkey if hotkey else tr("no_hotkey")
+        mode_text = mode
+        self.hotkey_label = QLabel(f"{hotkey_text}  ·  {mode_text}")
 
         info_layout.addWidget(self.name_label)
         info_layout.addWidget(self.hotkey_label)
 
         layout.addLayout(info_layout, 1)
 
+        # Badge réduction
+        self.reduction_label = QLabel(f"{reduction}%")
+        self.reduction_label.setAlignment(Qt.AlignCenter)
+        self.reduction_label.setFixedWidth(40)
+        layout.addWidget(self.reduction_label)
+
         self._update_style()
 
     def set_active(self, active: bool):
+        self._active = active
         self.indicator.set_active(active)
+        self._update_style()
 
     def set_selected(self, selected: bool):
         self._selected = selected
@@ -867,26 +1014,52 @@ class ServiceItemWidget(QWidget):
     def _update_style(self):
         if is_dark_theme():
             if self._selected:
-                self.setStyleSheet("ServiceItemWidget { background: #3d6d8f; border-radius: 8px; }")
-                self.name_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #ffffff; background: transparent;")
-                self.hotkey_label.setStyleSheet("font-size: 11px; color: #cde4f0; background: transparent;")
+                self.setStyleSheet(
+                    "ServiceItemWidget { background: #1e2d3d; border-left: 3px solid #5a9aad; border-radius: 10px; }"
+                )
+                self.name_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #e8e8e8; background: transparent;")
+                self.hotkey_label.setStyleSheet("font-size: 11px; color: #8ab4c8; background: transparent;")
+                self.reduction_label.setStyleSheet("font-size: 11px; font-weight: bold; color: #e0e0e0; background: #2a4a5a; border-radius: 4px; padding: 2px;")
             else:
-                self.setStyleSheet("ServiceItemWidget { background: #242424; border-radius: 8px; } ServiceItemWidget:hover { background: #2e2e2e; }")
-                self.name_label.setStyleSheet("font-weight: 500; font-size: 13px; color: #e0e0e0; background: transparent;")
-                self.hotkey_label.setStyleSheet("font-size: 11px; color: #808080; background: transparent;")
+                self.setStyleSheet(
+                    "ServiceItemWidget { background: #242424; border-left: 3px solid transparent; border-radius: 10px; }"
+                    " ServiceItemWidget:hover { background: #2c2c2c; }"
+                )
+                self.name_label.setStyleSheet("font-weight: 500; font-size: 13px; color: #d0d0d0; background: transparent;")
+                self.hotkey_label.setStyleSheet("font-size: 11px; color: #707070; background: transparent;")
+                self.reduction_label.setStyleSheet("font-size: 11px; font-weight: bold; color: #909090; background: #2a3a44; border-radius: 4px; padding: 2px;")
         else:
             if self._selected:
-                self.setStyleSheet("ServiceItemWidget { background: #2563eb; border-radius: 8px; }")
-                self.name_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #ffffff; background: transparent;")
-                self.hotkey_label.setStyleSheet("font-size: 11px; color: #bfdbfe; background: transparent;")
+                self.setStyleSheet(
+                    "ServiceItemWidget { background: #e8f0fe; border-left: 3px solid #2563eb; border-radius: 10px; }"
+                )
+                self.name_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #1a1a1a; background: transparent;")
+                self.hotkey_label.setStyleSheet("font-size: 11px; color: #3b72c4; background: transparent;")
+                self.reduction_label.setStyleSheet("font-size: 11px; font-weight: bold; color: #1e40af; background: #d0dff8; border-radius: 4px; padding: 2px;")
             else:
-                self.setStyleSheet("ServiceItemWidget { background: #ffffff; border-radius: 8px; border: 1px solid #e0e0e0; } ServiceItemWidget:hover { background: #f0f0f0; }")
+                self.setStyleSheet(
+                    "ServiceItemWidget { background: #ffffff; border-left: 3px solid transparent; border-radius: 10px; border: 1px solid #e8e8e8; }"
+                    " ServiceItemWidget:hover { background: #f5f5f5; }"
+                )
                 self.name_label.setStyleSheet("font-weight: 500; font-size: 13px; color: #333333; background: transparent;")
-                self.hotkey_label.setStyleSheet("font-size: 11px; color: #666666; background: transparent;")
+                self.hotkey_label.setStyleSheet("font-size: 11px; color: #888888; background: transparent;")
+                self.reduction_label.setStyleSheet("font-size: 11px; font-weight: bold; color: #555; background: #e8eff8; border-radius: 4px; padding: 2px;")
 
-    def update_info(self, name: str, hotkey: str):
+    def update_info(self, name: str, hotkey: str, reduction: int = None, mode: str = None):
         self.name_label.setText(name)
-        self.hotkey_label.setText(hotkey if hotkey else tr("no_hotkey"))
+        hotkey_text = hotkey if hotkey else tr("no_hotkey")
+        mode_text = mode or "hold"
+        self.hotkey_label.setText(f"{hotkey_text}  ·  {mode_text}")
+        if reduction is not None:
+            self.reduction_label.setText(f"{reduction}%")
+
+    def paintEvent(self, event):
+        """Nécessaire pour que le background du stylesheet s'affiche sur un QWidget custom."""
+        from PyQt5.QtWidgets import QStyleOption, QStyle
+        opt = QStyleOption()
+        opt.initFrom(self)
+        p = QPainter(self)
+        self.style().drawPrimitive(QStyle.PE_Widget, opt, p, self)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -896,7 +1069,6 @@ class ServiceItemWidget(QWidget):
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton and self._drag_start_pos:
-            # Vérifier si on a bougé assez pour commencer un drag
             if (event.pos() - self._drag_start_pos).manhattanLength() > 10:
                 self._start_drag()
         super().mouseMoveEvent(event)
@@ -950,8 +1122,9 @@ class ServiceListWidget(QWidget):
                 child.widget().deleteLater()
         self.layout.addStretch()
 
-    def add_item(self, index: int, name: str, hotkey: str, active: bool = False):
-        item = ServiceItemWidget(index, name, hotkey, active)
+    def add_item(self, index: int, name: str, hotkey: str, active: bool = False,
+                 reduction: int = 75, mode: str = "hold"):
+        item = ServiceItemWidget(index, name, hotkey, active, reduction, mode)
         item.clicked.connect(self._on_item_clicked)
         item.doubleClicked.connect(self._on_item_double_clicked)
 
@@ -985,9 +1158,15 @@ class ServiceListWidget(QWidget):
         if 0 <= index < len(self._items):
             self._items[index].set_active(active)
 
-    def update_item(self, index: int, name: str, hotkey: str):
+    def pulse_item(self, index: int):
+        """Déclenche un pulse sur l'indicateur d'un service."""
         if 0 <= index < len(self._items):
-            self._items[index].update_info(name, hotkey)
+            self._items[index].indicator.pulse()
+
+    def update_item(self, index: int, name: str, hotkey: str,
+                    reduction: int = None, mode: str = None):
+        if 0 <= index < len(self._items):
+            self._items[index].update_info(name, hotkey, reduction, mode)
 
     def get_item_at(self, pos) -> int:
         """Retourne l'index de l'item à la position donnée, ou -1"""
@@ -1048,7 +1227,6 @@ class MainWindow(QMainWindow):
         self._default_volume_enabled = self.data.get("settings", {}).get("default_volume_enabled", False)
         self._default_volume_level = self.data.get("settings", {}).get("default_volume_level", 100)
         self._default_volume_apps = self.data.get("settings", {}).get("default_volume_apps", [])
-        self._game_detection_enabled = self.data.get("settings", {}).get("game_detection_enabled", False)
         self._force_quit = False  # Pour distinguer fermeture réelle de minimisation
 
         self.setWindowTitle(tr("app_title"))
@@ -1058,6 +1236,7 @@ class MainWindow(QMainWindow):
         self._apply_theme()
         self.services: List[Dict] = self.data.get("services", [])
         self.controllers: Dict[int, VolumeServiceController] = {}
+        self._auto_started: set = set()  # Services démarrés automatiquement (schedule/jeux)
         self._selected_index = -1  # Index du service sélectionné
 
         self._build_ui()
@@ -1091,9 +1270,8 @@ class MainWindow(QMainWindow):
         if self._default_volume_enabled and self._default_volume_apps:
             QTimer.singleShot(1000, self._apply_default_volume)
 
-        # Démarrer la détection de jeux si activée
-        if self._game_detection_enabled:
-            self._setup_game_detection()
+        # Démarrer l'auto-activation si des services l'utilisent
+        self._setup_auto_activation()
 
         # Démarrer la vérification de planification
         self._setup_schedule_check()
@@ -1134,12 +1312,28 @@ class MainWindow(QMainWindow):
                 self.service_list.setStyleSheet("background: #f5f5f5;")
                 self.targets_scroll.setStyleSheet("QScrollArea { border: 1px solid #d0d0d0; border-radius: 6px; background: #ffffff; }")
                 self.targets_container.setStyleSheet("background: #ffffff;")
+                self.empty_state.setStyleSheet("background: #f5f5f5;")
+                self.empty_title.setStyleSheet("font-size: 15px; font-weight: 600; color: #666; background: transparent;")
+                self.empty_desc.setStyleSheet("font-size: 12px; color: #999; background: transparent;")
+                self.targets_resizable.refresh_style()
+                if hasattr(self, 'trigger_scroll'):
+                    self.trigger_scroll.setStyleSheet("QScrollArea { border: 1px solid #d0d0d0; border-radius: 6px; background: #ffffff; }")
+                    self.trigger_container.setStyleSheet("background: #ffffff;")
+                    self.trigger_resizable.refresh_style()
             else:
                 self.service_scroll.setStyleSheet("background: #1a1a1a;")
                 self.list_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #7eb8c9; padding: 12px; background: #1a1a1a;")
                 self.service_list.setStyleSheet("background: #1a1a1a;")
                 self.targets_scroll.setStyleSheet("QScrollArea { border: 1px solid #2d2d2d; border-radius: 6px; background: #222222; }")
                 self.targets_container.setStyleSheet("background: #222222;")
+                self.empty_state.setStyleSheet("background: #1a1a1a;")
+                self.empty_title.setStyleSheet("font-size: 15px; font-weight: 600; color: #606060; background: transparent;")
+                self.empty_desc.setStyleSheet("font-size: 12px; color: #484848; background: transparent;")
+                self.targets_resizable.refresh_style()
+                if hasattr(self, 'trigger_scroll'):
+                    self.trigger_scroll.setStyleSheet("QScrollArea { border: 1px solid #2d2d2d; border-radius: 6px; background: #222222; }")
+                    self.trigger_container.setStyleSheet("background: #222222;")
+                    self.trigger_resizable.refresh_style()
 
         # Rafraîchir la liste des services pour appliquer les nouveaux styles
         if hasattr(self, 'service_list'):
@@ -1268,13 +1462,39 @@ class MainWindow(QMainWindow):
 
         scroll_list.setWidget(self.service_list)
 
+        # Empty state
+        self.empty_state = QWidget()
+        empty_layout = QVBoxLayout(self.empty_state)
+        empty_layout.setAlignment(Qt.AlignCenter)
+        empty_icon = QLabel("—")
+        empty_icon.setStyleSheet("font-size: 28px; background: transparent; color: #555;")
+        empty_icon.setAlignment(Qt.AlignCenter)
+        self.empty_title = QLabel(tr("services"))
+        self.empty_title.setAlignment(Qt.AlignCenter)
+        self.empty_desc = QLabel(
+            "Create your first service\nto control volume" if _current_lang == "en"
+            else "Créez votre premier service\npour contrôler le volume"
+        )
+        self.empty_desc.setAlignment(Qt.AlignCenter)
+        self.empty_desc.setWordWrap(True)
+        empty_layout.addWidget(empty_icon)
+        empty_layout.addWidget(self.empty_title)
+        empty_layout.addWidget(self.empty_desc)
+        self.empty_state.setVisible(False)
+
         left_layout.addWidget(self.list_label)
         left_layout.addWidget(self.search_services_edit)
         left_layout.addWidget(scroll_list)
+        left_layout.addWidget(self.empty_state)
 
         central.addWidget(left_widget)
 
-        # === Panneau de droite avec scroll ===
+        # === Panneau de droite avec scroll + actions sticky ===
+        right_wrapper = QWidget()
+        right_wrapper_layout = QVBoxLayout(right_wrapper)
+        right_wrapper_layout.setContentsMargins(0, 0, 0, 0)
+        right_wrapper_layout.setSpacing(0)
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1300,6 +1520,27 @@ class MainWindow(QMainWindow):
 
         rv.addWidget(grp_service)
 
+        # === Groupe: Raccourci ===
+        grp_hotkey = QGroupBox(tr("hotkey"))
+        grp_hotkey_layout = QVBoxLayout(grp_hotkey)
+        grp_hotkey_layout.setSpacing(8)
+
+        hotkey_row = QHBoxLayout()
+        self.hk_edit = QLineEdit()
+        self.hk_edit.setPlaceholderText("ctrl+shift+m")
+        self.hk_edit.setToolTip(tr("tooltip_hotkey"))
+
+        self.hk_btn = QPushButton(tr("record"))
+        self.hk_btn.setToolTip(tr("record"))
+        self.hk_btn.clicked.connect(self._record_hotkey)
+
+        hotkey_row.addWidget(self.hk_edit, 1)
+        hotkey_row.addWidget(self.hk_btn)
+
+        grp_hotkey_layout.addLayout(hotkey_row)
+
+        rv.addWidget(grp_hotkey)
+
         # === Groupe: Applications Cibles ===
         grp_targets = QGroupBox(tr("target_apps"))
         grp_targets_layout = QVBoxLayout(grp_targets)
@@ -1310,11 +1551,9 @@ class MainWindow(QMainWindow):
         self.filter_edit.setToolTip(tr("tooltip_filter_apps"))
         self.filter_edit.textChanged.connect(self._filter_apps)
 
-        # Scroll area pour les checkboxes
+        # Scroll area pour les checkboxes (redimensionnable)
         targets_scroll = QScrollArea()
         targets_scroll.setWidgetResizable(True)
-        targets_scroll.setMinimumHeight(100)
-        targets_scroll.setMaximumHeight(150)
         targets_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.targets_scroll = targets_scroll  # Garder référence pour le thème
 
@@ -1326,6 +1565,7 @@ class MainWindow(QMainWindow):
 
         targets_scroll.setWidget(self.targets_container)
         self.targets_checkboxes: Dict[str, QCheckBox] = {}
+        self.targets_resizable = ResizableScrollArea(targets_scroll, min_h=80, default_h=150)
 
         # Ajout manuel d'application
         add_app_row = QHBoxLayout()
@@ -1355,32 +1595,11 @@ class MainWindow(QMainWindow):
         targets_btn_row.addStretch()
 
         grp_targets_layout.addWidget(self.filter_edit)
-        grp_targets_layout.addWidget(targets_scroll)
+        grp_targets_layout.addWidget(self.targets_resizable)
         grp_targets_layout.addLayout(add_app_row)
         grp_targets_layout.addLayout(targets_btn_row)
 
         rv.addWidget(grp_targets)
-
-        # === Groupe: Raccourci ===
-        grp_hotkey = QGroupBox(tr("hotkey"))
-        grp_hotkey_layout = QVBoxLayout(grp_hotkey)
-        grp_hotkey_layout.setSpacing(8)
-
-        hotkey_row = QHBoxLayout()
-        self.hk_edit = QLineEdit()
-        self.hk_edit.setPlaceholderText("ctrl+shift+m")
-        self.hk_edit.setToolTip(tr("tooltip_hotkey"))
-
-        self.hk_btn = QPushButton(tr("record"))
-        self.hk_btn.setToolTip(tr("record"))
-        self.hk_btn.clicked.connect(self._record_hotkey)
-
-        hotkey_row.addWidget(self.hk_edit, 1)
-        hotkey_row.addWidget(self.hk_btn)
-
-        grp_hotkey_layout.addLayout(hotkey_row)
-
-        rv.addWidget(grp_hotkey)
 
         # === Groupe: Paramètres Audio ===
         grp_audio = QGroupBox(tr("audio_params"))
@@ -1396,7 +1615,7 @@ class MainWindow(QMainWindow):
         self.reduct_slider.setToolTip(tr("tooltip_reduction"))
         self.reduct_label = QLabel("75%")
         self.reduct_label.setMinimumWidth(40)
-        self.reduct_slider.valueChanged.connect(lambda v: self.reduct_label.setText(f"{v}%"))
+        self.reduct_slider.valueChanged.connect(self._on_reduction_changed)
 
         reduction_row.addWidget(lbl_reduct)
         reduction_row.addWidget(self.reduct_slider, 1)
@@ -1439,6 +1658,22 @@ class MainWindow(QMainWindow):
         grp_audio_layout.addLayout(fade_row)
 
         rv.addWidget(grp_audio)
+
+        # === Groupe: Profils (mode avancé) ===
+        self.grp_profiles = QGroupBox(tr("profiles"))
+        grp_profiles_layout = QHBoxLayout(self.grp_profiles)
+
+        self.save_profile_btn = QPushButton(tr("save_profile"))
+        self.save_profile_btn.clicked.connect(self._save_profile)
+
+        self.load_profile_btn = QPushButton(tr("load_profile"))
+        self.load_profile_btn.clicked.connect(self._load_profile)
+
+        grp_profiles_layout.addWidget(self.save_profile_btn)
+        grp_profiles_layout.addWidget(self.load_profile_btn)
+
+        rv.addWidget(self.grp_profiles)
+        self.grp_profiles.setVisible(self._advanced_mode)
 
         # === Groupe: Actions ===
         grp_actions = QGroupBox(tr("actions"))
@@ -1484,8 +1719,6 @@ class MainWindow(QMainWindow):
         grp_actions_layout.addLayout(btn_row1)
         grp_actions_layout.addLayout(btn_row2)
 
-        rv.addWidget(grp_actions)
-
         # === Groupe: Statistiques (mode avancé) ===
         self.grp_stats = QGroupBox(tr("statistics"))
         grp_stats_layout = QVBoxLayout(self.grp_stats)
@@ -1506,11 +1739,6 @@ class MainWindow(QMainWindow):
 
         grp_stats_layout.addLayout(stats_row1)
         grp_stats_layout.addLayout(stats_row2)
-
-        rv.addWidget(self.grp_stats)
-
-        # Cacher le groupe stats si pas en mode avancé
-        self.grp_stats.setVisible(self._advanced_mode)
 
         # === Groupe: Planification (mode avancé) ===
         self.grp_schedule = QGroupBox(tr("schedule"))
@@ -1559,37 +1787,77 @@ class MainWindow(QMainWindow):
         rv.addWidget(self.grp_schedule)
         self.grp_schedule.setVisible(self._advanced_mode)
 
-        # === Groupe: Détection de jeux (mode avancé) ===
-        self.grp_game_detect = QGroupBox(tr("game_detection"))
-        grp_game_detect_layout = QVBoxLayout(self.grp_game_detect)
+        # === Groupe: Auto-activation (mode avancé) ===
+        self.grp_auto_activation = QGroupBox(tr("auto_activation"))
+        grp_aa_layout = QVBoxLayout(self.grp_auto_activation)
+        grp_aa_layout.setSpacing(8)
 
-        self.game_detect_chk = QCheckBox(tr("game_detection_enabled"))
-        self.game_detect_chk.setToolTip(tr("game_detection_desc"))
-        grp_game_detect_layout.addWidget(self.game_detect_chk)
+        self.auto_activation_chk = QCheckBox(tr("auto_activation_enabled"))
+        self.auto_activation_chk.setToolTip(tr("auto_activation_desc"))
+        self.auto_activation_chk.stateChanged.connect(self._on_auto_activation_toggled)
+        grp_aa_layout.addWidget(self.auto_activation_chk)
 
-        rv.addWidget(self.grp_game_detect)
-        self.grp_game_detect.setVisible(self._advanced_mode)
+        # Conteneur pour la liste d'apps (caché quand désactivé)
+        self.trigger_apps_container = QWidget()
+        trigger_apps_inner = QVBoxLayout(self.trigger_apps_container)
+        trigger_apps_inner.setContentsMargins(0, 0, 0, 0)
+        trigger_apps_inner.setSpacing(6)
 
-        # === Groupe: Profils (mode avancé) ===
-        self.grp_profiles = QGroupBox(tr("profiles"))
-        grp_profiles_layout = QHBoxLayout(self.grp_profiles)
+        # Filtre
+        self.trigger_filter_edit = QLineEdit()
+        self.trigger_filter_edit.setPlaceholderText(tr("auto_activation_filter"))
+        self.trigger_filter_edit.textChanged.connect(self._filter_trigger_apps)
+        trigger_apps_inner.addWidget(self.trigger_filter_edit)
 
-        self.save_profile_btn = QPushButton(tr("save_profile"))
-        self.save_profile_btn.clicked.connect(self._save_profile)
+        # ScrollArea avec checkboxes (redimensionnable)
+        trigger_scroll = QScrollArea()
+        trigger_scroll.setWidgetResizable(True)
+        trigger_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.trigger_scroll = trigger_scroll
 
-        self.load_profile_btn = QPushButton(tr("load_profile"))
-        self.load_profile_btn.clicked.connect(self._load_profile)
+        self.trigger_container = QWidget()
+        self.trigger_layout = QVBoxLayout(self.trigger_container)
+        self.trigger_layout.setContentsMargins(8, 8, 8, 8)
+        self.trigger_layout.setSpacing(4)
+        self.trigger_layout.addStretch()
 
-        grp_profiles_layout.addWidget(self.save_profile_btn)
-        grp_profiles_layout.addWidget(self.load_profile_btn)
+        trigger_scroll.setWidget(self.trigger_container)
+        self.trigger_checkboxes: Dict[str, QCheckBox] = {}
+        self.trigger_resizable = ResizableScrollArea(trigger_scroll, min_h=60, default_h=120)
+        trigger_apps_inner.addWidget(self.trigger_resizable)
 
-        rv.addWidget(self.grp_profiles)
-        self.grp_profiles.setVisible(self._advanced_mode)
+        # Ajout manuel
+        trigger_add_row = QHBoxLayout()
+        self.trigger_add_edit = QLineEdit()
+        self.trigger_add_edit.setPlaceholderText("app.exe")
+        self.trigger_add_edit.returnPressed.connect(self._add_manual_trigger_app)
+        self.trigger_add_btn = QPushButton("+")
+        self.trigger_add_btn.setFixedWidth(36)
+        self.trigger_add_btn.clicked.connect(self._add_manual_trigger_app)
+        trigger_add_row.addWidget(self.trigger_add_edit, 1)
+        trigger_add_row.addWidget(self.trigger_add_btn)
+        trigger_apps_inner.addLayout(trigger_add_row)
+
+        # Bouton actualiser
+        self.trigger_refresh_btn = QPushButton(tr("refresh"))
+        self.trigger_refresh_btn.clicked.connect(self._refresh_trigger_apps)
+        trigger_apps_inner.addWidget(self.trigger_refresh_btn)
+
+        grp_aa_layout.addWidget(self.trigger_apps_container)
+        self.trigger_apps_container.setVisible(False)
+
+        rv.addWidget(self.grp_auto_activation)
+        self.grp_auto_activation.setVisible(self._advanced_mode)
+
+        rv.addWidget(self.grp_stats)
+        self.grp_stats.setVisible(self._advanced_mode)
 
         rv.addStretch(1)
 
         scroll.setWidget(right)
-        central.addWidget(scroll)
+        right_wrapper_layout.addWidget(scroll, 1)
+        right_wrapper_layout.addWidget(grp_actions)
+        central.addWidget(right_wrapper)
         central.setSizes([280, 500])
 
         # Barre de statut
@@ -1600,21 +1868,37 @@ class MainWindow(QMainWindow):
         self.service_list.clear()
         for idx, svc in enumerate(self.services):
             self._add_list_item(svc, idx)
+        has_services = len(self.services) > 0
+        self.empty_state.setVisible(not has_services)
+        self.service_scroll.setVisible(has_services)
 
     def _add_list_item(self, svc: Dict, idx: int):
         is_active = idx in self.controllers
         name = svc.get("name", "Service sans nom")
         hotkey = svc.get("hotkey", "")
-        self.service_list.add_item(idx, name, hotkey, is_active)
+        reduction = svc.get("reduction", 75)
+        mode = svc.get("mode", "hold")
+        self.service_list.add_item(idx, name, hotkey, is_active, reduction, mode)
 
     def _update_status_indicators(self):
         for idx in range(len(self.services)):
             is_active = idx in self.controllers
             self.service_list.update_status(idx, is_active)
 
-        # Mettre à jour l'icône du tray selon l'état des services
+        # Mettre à jour l'icône et tooltip du tray selon l'état des services
         any_active = len(self.controllers) > 0
         self._update_tray_icon(any_active)
+        self._update_tray_tooltip()
+
+    def _update_tray_tooltip(self):
+        """Met à jour le tooltip du tray avec le nombre de services actifs."""
+        count = len(self.controllers)
+        total = len(self.services)
+        if count:
+            tip = f"SoundLowerer Plus — {count}/{total} actif(s)" if _current_lang == "fr" else f"SoundLowerer Plus — {count}/{total} active"
+        else:
+            tip = "SoundLowerer Plus"
+        self.tray.setToolTip(tip)
 
     def _update_tray_icon(self, active: bool):
         """Met à jour l'icône du tray selon l'état actif"""
@@ -1700,9 +1984,38 @@ class MainWindow(QMainWindow):
             for key, cb in self.day_checkboxes.items():
                 cb.setChecked(key in schedule_days)
 
-        # Charger la détection de jeux (mode avancé)
-        if self._advanced_mode and hasattr(self, 'game_detect_chk'):
-            self.game_detect_chk.setChecked(svc.get("game_detection", False))
+        # Charger l'auto-activation (mode avancé)
+        if self._advanced_mode and hasattr(self, 'auto_activation_chk'):
+            self.auto_activation_chk.setChecked(svc.get("auto_activation", False))
+            trigger_apps = svc.get("trigger_apps", [])
+            self._build_trigger_apps_checkboxes({app: True for app in trigger_apps})
+
+    def _on_reduction_changed(self, value: int):
+        self.reduct_label.setText(f"{value}%")
+        self._update_slider_color(value)
+
+    def _update_slider_color(self, value: int):
+        """Met à jour la couleur du slider selon la valeur de réduction."""
+        if value <= 30:
+            color = "#22c55e"  # vert
+            handle = "#16a34a"
+        elif value <= 70:
+            color = "#5a9aad"  # cyan
+            handle = "#4a8a9d"
+        else:
+            color = "#f59e0b"  # orange
+            handle = "#d97706"
+
+        self.reduct_slider.setStyleSheet(f"""
+            QSlider::groove:horizontal {{ height: 6px; background: {"#2a2a2a" if is_dark_theme() else "#d0d0d0"}; border-radius: 3px; }}
+            QSlider::sub-page:horizontal {{ background: {color}; border-radius: 3px; }}
+            QSlider::handle:horizontal {{ background: {handle}; width: 16px; height: 16px; margin: -5px 0; border-radius: 8px; }}
+            QSlider::handle:horizontal:hover {{ background: {color}; }}
+        """)
+
+    def _toast(self, text: str, toast_type: str = "info", duration_ms: int = 3000):
+        """Affiche un message dans la barre de statut."""
+        self.statusBar().showMessage(text, duration_ms)
 
     def _toggle_service(self, idx: int):
         """Double-clic pour démarrer/arrêter"""
@@ -1721,18 +2034,18 @@ class MainWindow(QMainWindow):
         menu = QMenu(self)
 
         if idx in self.controllers:
-            stop_action = menu.addAction("Arrêter")
+            stop_action = menu.addAction(tr("stop"))
             stop_action.triggered.connect(lambda: self._stop_at_index(idx))
         else:
-            start_action = menu.addAction("Démarrer")
+            start_action = menu.addAction(tr("start"))
             start_action.triggered.connect(lambda: self._start_at_index(idx))
 
         menu.addSeparator()
 
-        dup_action = menu.addAction("Dupliquer")
+        dup_action = menu.addAction(tr("duplicate"))
         dup_action.triggered.connect(lambda: self._duplicate_at_index(idx))
 
-        del_action = menu.addAction("Supprimer")
+        del_action = menu.addAction(tr("delete"))
         del_action.triggered.connect(lambda: self._delete_at_index(idx))
 
         menu.exec_(self.service_list.mapToGlobal(pos))
@@ -1744,12 +2057,15 @@ class MainWindow(QMainWindow):
         self.tray_menu = QMenu()
         self.toggle_all_act = self.tray_menu.addAction(tr("tray_toggle_all"))
         self.toggle_all_act.triggered.connect(self._toggle_all)
+        self.stop_all_act = self.tray_menu.addAction(tr("tray_stop_all"))
+        self.stop_all_act.triggered.connect(self._stop_all_services)
         self.tray_menu.addSeparator()
         self.open_act = self.tray_menu.addAction(tr("tray_open"))
         self.open_act.triggered.connect(self._show_from_tray)
         self.quit_act = self.tray_menu.addAction(tr("tray_quit"))
         self.quit_act.triggered.connect(self._quit_app)
         self.tray.setContextMenu(self.tray_menu)
+        self._update_tray_tooltip()
         self.tray.show()
 
     def _on_tray_activated(self, reason):
@@ -1769,16 +2085,24 @@ class MainWindow(QMainWindow):
         self.close()
 
     def _toggle_all(self):
-        running = any(c.is_active() for c in self.controllers.values()) if self.controllers else False
+        running = bool(self.controllers)
         if running:
-            for idx, c in list(self.controllers.items()):
-                c.stop()
-                del self.controllers[idx]
-            self.statusBar().showMessage(tr("all_stopped"), 3000)
+            self._stop_all_services()
         else:
             for idx in range(len(self.services)):
                 self._start_at_index(idx)
-            self.statusBar().showMessage(tr("all_started"), 3000)
+            self._toast(tr("all_started"), "success")
+        self._update_tray_tooltip()
+
+    def _stop_all_services(self):
+        """Arrête tous les services actifs."""
+        count = len(self.controllers)
+        for idx, c in list(self.controllers.items()):
+            c.stop()
+            del self.controllers[idx]
+        if count:
+            self._toast(tr("stop_all_done").format(count), "info")
+        self._update_tray_tooltip()
 
     # --- Persistance ---
     def _autosave(self):
@@ -1786,7 +2110,7 @@ class MainWindow(QMainWindow):
             self._dirty = False
             self.data["services"] = self.services
             save_config(self.data)
-            self.statusBar().showMessage(tr("config_saved"), 3000)
+            self._toast(tr("config_saved"), "success")
 
     # --- Données audio ---
     def _add_manual_app(self):
@@ -1794,6 +2118,10 @@ class MainWindow(QMainWindow):
         app_name = self.add_app_edit.text().strip()
         if not app_name:
             return
+        # Assurer l'extension .exe si absente
+        if not app_name.endswith(".exe"):
+            app_name += ".exe"
+        app_name = app_name.lower()
 
         # Ajouter à la liste des apps manuelles
         if not hasattr(self, '_manual_apps'):
@@ -1810,9 +2138,9 @@ class MainWindow(QMainWindow):
         # Vider le champ
         self.add_app_edit.clear()
 
-        self.statusBar().showMessage(
+        self._toast(
             f"'{app_name}' added" if _current_lang == "en" else f"'{app_name}' ajouté",
-            3000
+            "success"
         )
 
     def _refresh_apps(self):
@@ -1891,8 +2219,9 @@ class MainWindow(QMainWindow):
             svc["schedule_end"] = self.schedule_end_time.time().toString("HH:mm")
             svc["schedule_days"] = [key for key, cb in self.day_checkboxes.items() if cb.isChecked()]
 
-        if hasattr(self, 'game_detect_chk'):
-            svc["game_detection"] = self.game_detect_chk.isChecked()
+        if hasattr(self, 'auto_activation_chk'):
+            svc["auto_activation"] = self.auto_activation_chk.isChecked()
+            svc["trigger_apps"] = [name for name, cb in self.trigger_checkboxes.items() if cb.isChecked()]
 
         return svc
 
@@ -1901,7 +2230,19 @@ class MainWindow(QMainWindow):
             return tr("missing_hotkey")
         if not validate_hotkey(svc["hotkey"]):
             return tr("invalid_hotkey").format(svc['hotkey'])
-        # Note: On autorise plusieurs services avec le même raccourci
+        # Vérifier les noms dupliqués
+        name = svc.get("name", "").strip()
+        for i, existing in enumerate(self.services):
+            if i == exclude_idx:
+                continue
+            if existing.get("name", "").strip().lower() == name.lower():
+                return tr("duplicate_name").format(name)
+        # Vérifier les horaires
+        if svc.get("schedule_enabled"):
+            start = svc.get("schedule_start", "00:00")
+            end = svc.get("schedule_end", "23:59")
+            if start >= end:
+                return tr("schedule_invalid_time")
         return ""
 
     def _record_hotkey(self):
@@ -1912,9 +2253,28 @@ class MainWindow(QMainWindow):
         self.hk_btn.setEnabled(False)
         self.hk_edit.setEnabled(False)
 
+        # Animation pulsante sur le champ hotkey
+        self._recording_pulse = True
+        self._pulse_state = False
+        accent = "#f59e0b"
+        bg = "#3a2a10" if is_dark_theme() else "#fef3c7"
+        self._pulse_styles = [
+            f"QLineEdit {{ border: 2px solid {accent}; background: {bg}; }}",
+            f"QLineEdit {{ border: 2px solid transparent; background: {bg}; }}",
+        ]
+        self._pulse_timer = QTimer()
+        self._pulse_timer.timeout.connect(self._pulse_hotkey_field)
+        self._pulse_timer.start(500)
+        self.hk_edit.setStyleSheet(self._pulse_styles[0])
+
         QApplication.processEvents()
 
         hk = record_hotkey_once()
+
+        # Arrêter l'animation
+        self._recording_pulse = False
+        self._pulse_timer.stop()
+        self.hk_edit.setStyleSheet("")
 
         self.hk_btn.setText(original_text)
         self.hk_btn.setObjectName("")
@@ -1924,9 +2284,30 @@ class MainWindow(QMainWindow):
 
         if hk:
             self.hk_edit.setText(hk)
-            self.statusBar().showMessage(tr("hotkey_recorded").format(hk), 3000)
+            # Vérifier les conflits en temps réel
+            conflict = self._check_hotkey_conflict(hk)
+            if conflict:
+                self._toast(tr("hotkey_conflict").format(hk, conflict), "warning")
+            else:
+                self._toast(tr("hotkey_recorded").format(hk), "success")
         else:
-            self.statusBar().showMessage(tr("hotkey_cancelled"), 3000)
+            self._toast(tr("hotkey_cancelled"), "warning")
+
+    def _check_hotkey_conflict(self, hotkey: str) -> str:
+        """Vérifie si un raccourci est déjà utilisé. Retourne le nom du service en conflit ou ''."""
+        for i, svc in enumerate(self.services):
+            if i == self._selected_index:
+                continue
+            if svc.get("hotkey", "").strip().lower() == hotkey.strip().lower():
+                return svc.get("name", "Service")
+        return ""
+
+    def _pulse_hotkey_field(self):
+        """Alterne le style du champ hotkey pour créer un effet pulsant."""
+        if not self._recording_pulse:
+            return
+        self._pulse_state = not self._pulse_state
+        self.hk_edit.setStyleSheet(self._pulse_styles[1 if self._pulse_state else 0])
 
     def _show_presets_menu(self):
         menu = QMenu(self)
@@ -1943,7 +2324,7 @@ class MainWindow(QMainWindow):
         for app_name, cb in self.targets_checkboxes.items():
             matched = any(t.lower() in app_name.lower() or app_name.lower() in t.lower() for t in targets)
             cb.setChecked(matched)
-        self.statusBar().showMessage(tr("preset_applied").format(preset_name), 3000)
+        self._toast(tr("preset_applied").format(preset_name), "info")
 
     # --- Actions ---
     def _save_selected(self):
@@ -1963,18 +2344,26 @@ class MainWindow(QMainWindow):
             self.controllers[self._selected_index].stop()
             del self.controllers[self._selected_index]
 
-        # Mettre à jour les données
+        # Mettre à jour les données en préservant les statistiques
+        old_svc = self.services[self._selected_index]
+        for key in ("usage_count", "last_used"):
+            if key in old_svc and key not in svc:
+                svc[key] = old_svc[key]
         self.services[self._selected_index] = svc
         self._dirty = True
 
         # Mettre à jour l'affichage dans la liste
-        self.service_list.update_item(self._selected_index, svc['name'], svc['hotkey'])
+        self.service_list.update_item(self._selected_index, svc['name'], svc['hotkey'],
+                                      svc.get('reduction', 75), svc.get('mode', 'hold'))
 
         # Redémarrer si était actif
         if was_active:
             self._start_at_index(self._selected_index)
 
-        self.statusBar().showMessage(tr("service_modified").format(svc['name']), 3000)
+        # Relancer le timer d'auto-activation si les trigger_apps ont changé
+        self._restart_auto_activation_if_needed()
+
+        self._toast(tr("service_modified").format(svc['name']), "success")
 
     def _add_new(self):
         """Crée un nouveau service"""
@@ -1992,7 +2381,10 @@ class MainWindow(QMainWindow):
         # Sélectionner le nouveau service
         self.service_list.select(idx)
 
-        self.statusBar().showMessage(tr("service_created").format(svc['name']), 3000)
+        # Relancer le timer d'auto-activation si des trigger_apps sont configurées
+        self._restart_auto_activation_if_needed()
+
+        self._toast(tr("service_created").format(svc['name']), "success")
 
     def _delete_selected(self):
         if self._selected_index < 0:
@@ -2033,12 +2425,16 @@ class MainWindow(QMainWindow):
         self.save_btn.setEnabled(False)
         self._load_list()
 
-        self.statusBar().showMessage(tr("service_deleted"), 3000)
+        self._toast(tr("service_deleted"), "info")
 
     def _duplicate_at_index(self, idx: int):
-        svc = dict(self.services[idx])
+        import copy
+        svc = copy.deepcopy(self.services[idx])
         svc["name"] = svc.get("name", "") + " (copie)"
         svc["hotkey"] = ""  # Vider le raccourci pour éviter les conflits
+        # Réinitialiser les statistiques pour la copie
+        svc.pop("usage_count", None)
+        svc.pop("last_used", None)
 
         self.services.append(svc)
         new_idx = len(self.services) - 1
@@ -2046,7 +2442,7 @@ class MainWindow(QMainWindow):
         self._dirty = True
 
         self.service_list.select(new_idx)
-        self.statusBar().showMessage(tr("service_duplicated"), 3000)
+        self._toast(tr("service_duplicated"), "info")
 
     def _start_selected(self):
         if self._selected_index < 0:
@@ -2061,9 +2457,13 @@ class MainWindow(QMainWindow):
 
         s = self.services[idx]
 
-        # Callback pour les statistiques (mode avancé)
+        # Callback pour les statistiques et le pulse visuel
+        service_idx = idx
         def on_use():
-            self._record_service_usage(idx)
+            if self._advanced_mode:
+                self._record_service_usage(service_idx)
+            # Pulse visuel via signal thread-safe
+            QTimer.singleShot(0, lambda: self.service_list.pulse_item(service_idx))
 
         ctrl = VolumeServiceController(
             name=s.get("name", ""),
@@ -2074,11 +2474,11 @@ class MainWindow(QMainWindow):
             fade_ms=int(s.get("fade_ms", 300)),
             curve=s.get("curve", "linear"),
             all_except=bool(s.get("all_except", False)),
-            on_use_callback=on_use if self._advanced_mode else None
+            on_use_callback=on_use
         )
         self.controllers[idx] = ctrl
         ctrl.start()
-        self.statusBar().showMessage(tr("service_started").format(s.get('name', '')), 3000)
+        self._toast(tr("service_started").format(s.get('name', '')), "success")
 
     def _stop_selected(self):
         if self._selected_index < 0:
@@ -2090,7 +2490,8 @@ class MainWindow(QMainWindow):
             return
         self.controllers[idx].stop()
         del self.controllers[idx]
-        self.statusBar().showMessage(tr("service_stopped").format(self.services[idx].get('name', '')), 3000)
+        self._auto_started.discard(idx)
+        self._toast(tr("service_stopped").format(self.services[idx].get('name', '')), "info")
 
     def _test_current(self):
         svc = self._form_to_service()
@@ -2105,9 +2506,45 @@ class MainWindow(QMainWindow):
             fade_ms=svc["fade_ms"], curve=svc["curve"], all_except=svc["all_except"]
         )
         c._apply_reduction()
-        self.statusBar().showMessage(tr("test_applied"), 3000)
+        self._toast(tr("test_applied"), "info")
         from threading import Timer
         Timer(0.8, c._restore).start()
+
+    def changeEvent(self, e):
+        """Pause les timers de polling quand la fenêtre est minimisée."""
+        from PyQt5.QtCore import QEvent
+        if e.type() == QEvent.WindowStateChange:
+            if self.windowState() & Qt.WindowMinimized:
+                self._pause_polling()
+            else:
+                self._resume_polling()
+        super().changeEvent(e)
+
+    def hideEvent(self, e):
+        """Pause les timers quand la fenêtre est cachée (tray)."""
+        self._pause_polling()
+        super().hideEvent(e)
+
+    def showEvent(self, e):
+        """Reprend les timers quand la fenêtre est affichée."""
+        self._resume_polling()
+        super().showEvent(e)
+
+    def _pause_polling(self):
+        """Arrête les timers de polling non-essentiels."""
+        if hasattr(self, 'refresh_timer') and self.refresh_timer.isActive():
+            self.refresh_timer.stop()
+        if hasattr(self, 'status_timer') and self.status_timer.isActive():
+            self.status_timer.stop()
+
+    def _resume_polling(self):
+        """Reprend les timers de polling."""
+        if hasattr(self, 'refresh_timer') and not self.refresh_timer.isActive():
+            self.refresh_timer.start()
+            self._refresh_apps()  # Rafraîchir immédiatement
+        if hasattr(self, 'status_timer') and not self.status_timer.isActive():
+            self.status_timer.start()
+            self._update_status_indicators()
 
     def closeEvent(self, e):
         # Si close_to_tray est activé et qu'on ne force pas la fermeture
@@ -2139,7 +2576,7 @@ class MainWindow(QMainWindow):
             if idx < len(self.services):
                 self._start_at_index(idx)
         if active:
-            self.statusBar().showMessage(tr("restored").format(len(active)), 3000)
+            self._toast(tr("restored").format(len(active)), "success")
 
     # --- Import/Export ---
     def _export_selected(self):
@@ -2159,7 +2596,7 @@ class MainWindow(QMainWindow):
         try:
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(svc, f, indent=2, ensure_ascii=False)
-            self.statusBar().showMessage(tr("export_success").format(os.path.basename(path)), 3000)
+            self._toast(tr("export_success").format(os.path.basename(path)), "success")
         except Exception as e:
             QMessageBox.warning(self, tr("export"), str(e))
 
@@ -2190,7 +2627,7 @@ class MainWindow(QMainWindow):
             self._dirty = True
 
             self.service_list.select(idx)
-            self.statusBar().showMessage(tr("import_success").format(svc.get("name", "Service")), 3000)
+            self._toast(tr("import_success").format(svc.get("name", "Service")), "success")
 
         except Exception as e:
             QMessageBox.warning(self, tr("import_btn"), tr("import_error") + f"\n{e}")
@@ -2211,7 +2648,6 @@ class MainWindow(QMainWindow):
             default_volume_enabled=self._default_volume_enabled,
             default_volume_level=self._default_volume_level,
             default_volume_apps=self._default_volume_apps,
-            game_detection_enabled=self._game_detection_enabled,
             parent=self
         )
 
@@ -2276,15 +2712,6 @@ class MainWindow(QMainWindow):
                 self._dirty = True
 
             # Appliquer détection de jeux
-            if settings["game_detection_enabled"] != self._game_detection_enabled:
-                self._game_detection_enabled = settings["game_detection_enabled"]
-                self.data.setdefault("settings", {})["game_detection_enabled"] = self._game_detection_enabled
-                if self._game_detection_enabled:
-                    self._setup_game_detection()
-                else:
-                    self._stop_game_detection()
-                self._dirty = True
-
             # Rafraîchir l'UI si la langue a changé
             if need_refresh:
                 self._refresh_ui_language()
@@ -2338,18 +2765,23 @@ class MainWindow(QMainWindow):
                         action.setToolTip(tr("settings"))
 
         # Groupes
+        _title_keywords = {
+            "service": ["service"],
+            "target_apps": ["target", "cible"],
+            "hotkey": ["hotkey", "raccourci", "keyboard"],
+            "audio_params": ["audio", "paramètre"],
+            "actions": ["action"],
+            "auto_activation": ["auto-activation", "auto_activation"],
+            "schedule": ["planification", "schedule"],
+            "profiles": ["profil"],
+            "statistics": ["statistique", "statistic"],
+        }
         for group in self.findChildren(QGroupBox):
             title = group.title().lower()
-            if "service" in title:
-                group.setTitle(tr("service"))
-            elif "target" in title or "cible" in title or "application" in title:
-                group.setTitle(tr("target_apps"))
-            elif "hotkey" in title or "raccourci" in title or "keyboard" in title:
-                group.setTitle(tr("hotkey"))
-            elif "audio" in title or "paramètre" in title:
-                group.setTitle(tr("audio_params"))
-            elif "action" in title:
-                group.setTitle(tr("actions"))
+            for key, keywords in _title_keywords.items():
+                if any(kw in title for kw in keywords):
+                    group.setTitle(tr(key))
+                    break
 
         # Boutons
         self.save_btn.setText(tr("save_changes"))
@@ -2375,6 +2807,13 @@ class MainWindow(QMainWindow):
         self.filter_edit.setPlaceholderText(tr("filter_apps"))
         self.add_app_edit.setPlaceholderText("spotify.exe")
 
+        # État vide
+        self.empty_title.setText(tr("services"))
+        self.empty_desc.setText(
+            "Create your first service\nto control volume" if _current_lang == "en"
+            else "Créez votre premier service\npour contrôler le volume"
+        )
+
         # Tooltips
         self.name_edit.setToolTip(tr("tooltip_service_name"))
         self.filter_edit.setToolTip(tr("tooltip_filter_apps"))
@@ -2390,8 +2829,16 @@ class MainWindow(QMainWindow):
         # Menu du tray
         if hasattr(self, 'tray_menu'):
             self.toggle_all_act.setText(tr("tray_toggle_all"))
+            self.stop_all_act.setText(tr("tray_stop_all"))
             self.open_act.setText(tr("tray_open"))
             self.quit_act.setText(tr("tray_quit"))
+
+        # Auto-activation
+        if hasattr(self, 'auto_activation_chk'):
+            self.auto_activation_chk.setText(tr("auto_activation_enabled"))
+            self.auto_activation_chk.setToolTip(tr("auto_activation_desc"))
+            self.trigger_filter_edit.setPlaceholderText(tr("auto_activation_filter"))
+            self.trigger_refresh_btn.setText(tr("refresh"))
 
         # Champ de recherche
         if hasattr(self, 'search_services_edit'):
@@ -2470,27 +2917,140 @@ class MainWindow(QMainWindow):
             if not text or text in name or text in hotkey:
                 is_active = idx in self.controllers
                 self.service_list.add_item(idx, svc.get("name", "Service sans nom"),
-                                          svc.get("hotkey", ""), is_active)
+                                          svc.get("hotkey", ""), is_active,
+                                          svc.get("reduction", 75), svc.get("mode", "hold"))
 
     # --- Raccourcis clavier ---
     def _setup_shortcuts(self):
         """Configure les raccourcis clavier de l'application"""
         # Suppr pour supprimer le service sélectionné
         delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
-        delete_shortcut.activated.connect(self._delete_selected)
+        delete_shortcut.activated.connect(self._on_delete_shortcut)
 
         # Entrée pour démarrer/arrêter le service sélectionné
         enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
-        enter_shortcut.activated.connect(self._toggle_selected_service)
+        enter_shortcut.activated.connect(self._on_toggle_shortcut)
 
         # Espace aussi pour démarrer/arrêter
         space_shortcut = QShortcut(QKeySequence(Qt.Key_Space), self)
-        space_shortcut.activated.connect(self._toggle_selected_service)
+        space_shortcut.activated.connect(self._on_toggle_shortcut)
+
+        # Ctrl+Enter pour démarrer/arrêter (fonctionne même si un champ texte a le focus)
+        ctrl_enter_shortcut = QShortcut(QKeySequence("Ctrl+Return"), self)
+        ctrl_enter_shortcut.activated.connect(self._toggle_selected_service)
+
+    def _has_text_input_focus(self) -> bool:
+        """Vérifie si un champ de saisie a le focus"""
+        focused = QApplication.focusWidget()
+        return isinstance(focused, (QLineEdit, QSpinBox, QComboBox))
+
+    def _on_delete_shortcut(self):
+        """Raccourci Suppr - ignore si un champ texte a le focus"""
+        if not self._has_text_input_focus():
+            self._delete_selected()
+
+    def _on_toggle_shortcut(self):
+        """Raccourci Entrée/Espace - ignore si un champ texte a le focus"""
+        if not self._has_text_input_focus():
+            self._toggle_selected_service()
 
     def _toggle_selected_service(self):
         """Démarre ou arrête le service sélectionné"""
         if self._selected_index >= 0:
             self._toggle_service(self._selected_index)
+
+    def _on_auto_activation_toggled(self, state):
+        """Affiche/cache la liste d'apps trigger quand le checkbox est coché/décoché"""
+        self.trigger_apps_container.setVisible(state == Qt.Checked)
+        if state == Qt.Checked and not self.trigger_checkboxes:
+            self._refresh_trigger_apps()
+
+    def _get_all_running_app_names(self) -> list:
+        """Retourne la liste triée des noms de processus en cours"""
+        import psutil
+        names = set()
+        for p in psutil.process_iter(['name']):
+            try:
+                name = p.info['name']
+                if name:
+                    names.add(name.lower())
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        # Filtrer les processus système courants
+        system_procs = {'system', 'system idle process', 'svchost.exe', 'csrss.exe',
+                        'smss.exe', 'wininit.exe', 'services.exe', 'lsass.exe',
+                        'winlogon.exe', 'dwm.exe', 'conhost.exe', 'registry',
+                        'fontdrvhost.exe', 'dllhost.exe', 'sihost.exe',
+                        'taskhostw.exe', 'ctfmon.exe', 'runtimebroker.exe'}
+        return sorted(names - system_procs)
+
+    def _build_trigger_apps_checkboxes(self, current_selections: Dict[str, bool] = None):
+        """Construit la liste de checkboxes pour les applications déclencheurs"""
+        if current_selections is None:
+            current_selections = {}
+
+        # Supprimer les anciennes checkboxes
+        for cb in self.trigger_checkboxes.values():
+            cb.deleteLater()
+        self.trigger_checkboxes.clear()
+
+        while self.trigger_layout.count():
+            item = self.trigger_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        filter_text = self.trigger_filter_edit.text().lower() if hasattr(self, 'trigger_filter_edit') else ""
+        apps = getattr(self, '_all_trigger_apps', None) or self._get_all_running_app_names()
+
+        # Ajouter les apps manuelles trigger
+        manual = getattr(self, '_manual_trigger_apps', set())
+        for app in manual:
+            if app not in apps:
+                apps.append(app)
+
+        # Ajouter les apps déjà sélectionnées (persistance)
+        for app in current_selections.keys():
+            if app not in apps:
+                apps.append(app)
+
+        for name in apps:
+            if filter_text and filter_text not in name.lower():
+                continue
+            cb = QCheckBox(name)
+            if is_dark_theme():
+                cb.setStyleSheet("QCheckBox { color: #c0c0c0; padding: 4px; background: transparent; }")
+            else:
+                cb.setStyleSheet("QCheckBox { color: #333333; padding: 4px; background: transparent; }")
+            if name in current_selections and current_selections[name]:
+                cb.setChecked(True)
+            self.trigger_layout.addWidget(cb)
+            self.trigger_checkboxes[name] = cb
+
+        self.trigger_layout.addStretch()
+
+    def _filter_trigger_apps(self, text: str):
+        """Filtre la liste des apps trigger"""
+        current = {name: cb.isChecked() for name, cb in self.trigger_checkboxes.items()}
+        self._build_trigger_apps_checkboxes(current)
+
+    def _add_manual_trigger_app(self):
+        """Ajoute manuellement une app trigger"""
+        app_name = self.trigger_add_edit.text().strip()
+        if not app_name:
+            return
+        if not hasattr(self, '_manual_trigger_apps'):
+            self._manual_trigger_apps = set()
+        self._manual_trigger_apps.add(app_name)
+        current = {name: cb.isChecked() for name, cb in self.trigger_checkboxes.items()}
+        current[app_name] = True
+        self._build_trigger_apps_checkboxes(current)
+        self.trigger_add_edit.clear()
+
+    def _refresh_trigger_apps(self):
+        """Actualise la liste des apps trigger (tous les processus)"""
+        self._all_trigger_apps = self._get_all_running_app_names()
+        current = {name: cb.isChecked() for name, cb in self.trigger_checkboxes.items()}
+        self._build_trigger_apps_checkboxes(current)
 
     # --- Mode avancé ---
     def _update_advanced_ui(self):
@@ -2502,8 +3062,8 @@ class MainWindow(QMainWindow):
             self.grp_profiles.setVisible(self._advanced_mode)
         if hasattr(self, 'grp_schedule'):
             self.grp_schedule.setVisible(self._advanced_mode)
-        if hasattr(self, 'grp_game_detect'):
-            self.grp_game_detect.setVisible(self._advanced_mode)
+        if hasattr(self, 'grp_auto_activation'):
+            self.grp_auto_activation.setVisible(self._advanced_mode)
 
     # --- Profils ---
     def _get_profiles_dir(self):
@@ -2546,7 +3106,7 @@ class MainWindow(QMainWindow):
             with open(profile_path, 'w', encoding='utf-8') as f:
                 json.dump(profile_data, f, indent=2, ensure_ascii=False)
 
-            self.statusBar().showMessage(tr("profile_saved").format(name), 3000)
+            self._toast(tr("profile_saved").format(name), "success")
         except Exception as e:
             QMessageBox.warning(self, tr("profiles"), f"Erreur: {e}")
 
@@ -2600,7 +3160,7 @@ class MainWindow(QMainWindow):
             self._load_list()
             self._dirty = True
 
-            self.statusBar().showMessage(tr("profile_loaded").format(name), 3000)
+            self._toast(tr("profile_loaded").format(name), "success")
         except Exception as e:
             QMessageBox.warning(self, tr("profiles"), f"Erreur: {e}")
 
@@ -2646,7 +3206,6 @@ class MainWindow(QMainWindow):
 
     def _do_backup(self):
         """Effectue une sauvegarde de la configuration"""
-        import shutil
         from datetime import datetime
 
         backup_dir = os.path.join(os.path.dirname(resource_path(".")), "backups")
@@ -2679,77 +3238,75 @@ class MainWindow(QMainWindow):
         from audio_backend import set_volume_for_processes
         volume = self._default_volume_level / 100.0
         set_volume_for_processes(self._default_volume_apps, volume)
-        self.statusBar().showMessage(tr("default_vol_applied").format(len(self._default_volume_apps)), 3000)
+        self._toast(tr("default_vol_applied").format(len(self._default_volume_apps)), "info")
 
-    # --- Détection de jeux ---
-    # Liste des processus de jeux courants
-    GAME_PROCESSES = [
-        "game", "unity", "unreal", "godot",
-        # Launchers
-        "steam", "epicgameslauncher", "origin", "uplay", "battlenet",
-        # Jeux populaires
-        "valorant", "csgo", "cs2", "dota2", "leagueoflegends", "fortnite",
-        "minecraft", "rocketleague", "apex", "overwatch", "pubg",
-        "gtav", "rdr2", "cyberpunk", "eldenring", "hogwartslegacy",
-        "baldursgate3", "starfield", "diablo", "worldofwarcraft",
-        "destiny2", "warframe", "pathofexile", "lostark",
-        # Suffixes communs
-        "-win64-shipping", "win64-shipping", "game.exe", "launcher"
-    ]
+    # --- Auto-activation ---
+    def _setup_auto_activation(self):
+        """Configure le timer d'auto-activation si des services l'utilisent"""
+        # Vérifier si au moins un service a l'auto-activation
+        has_triggers = any(
+            svc.get("auto_activation", False) and svc.get("trigger_apps", [])
+            for svc in self.services
+        )
+        if has_triggers:
+            self._auto_activation_timer = QTimer(self)
+            self._auto_activation_timer.setInterval(5000)  # Vérifier toutes les 5 secondes
+            self._auto_activation_timer.timeout.connect(self._check_trigger_apps)
+            self._auto_activation_timer.start()
+            self._previous_running_apps: set = set()
 
-    def _setup_game_detection(self):
-        """Configure la détection automatique de jeux"""
-        self.game_detection_timer = QTimer(self)
-        self.game_detection_timer.setInterval(5000)  # Vérifier toutes les 5 secondes
-        self.game_detection_timer.timeout.connect(self._check_for_games)
-        self.game_detection_timer.start()
-        self._detected_games = set()
+    def _get_running_processes(self) -> set:
+        """Retourne l'ensemble des processus en cours d'exécution"""
+        import psutil
+        procs = set()
+        for p in psutil.process_iter(['name']):
+            try:
+                name = p.info['name']
+                if name:
+                    procs.add(name.lower())
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        return procs
 
-    def _check_for_games(self):
-        """Vérifie si un jeu est en cours d'exécution"""
-        if not self._game_detection_enabled:
-            return
+    def _check_trigger_apps(self):
+        """Vérifie si les applications trigger sont en cours d'exécution"""
+        current_apps = self._get_running_processes()
 
-        from audio_backend import unique_apps
-        current_apps = unique_apps(force_refresh=True)
+        for idx, svc in enumerate(self.services):
+            if not svc.get("auto_activation", False):
+                continue
+            trigger_apps = svc.get("trigger_apps", [])
+            if not trigger_apps:
+                continue
 
-        # Chercher des jeux
-        games_found = set()
-        for app in current_apps:
-            app_lower = app.lower()
-            for game_pattern in self.GAME_PROCESSES:
-                if game_pattern in app_lower:
-                    games_found.add(app)
-                    break
+            # Vérifier si au moins une trigger app est en cours
+            any_running = any(app in current_apps for app in trigger_apps)
 
-        # Nouveaux jeux détectés
-        new_games = games_found - self._detected_games
+            if any_running and idx not in self.controllers:
+                # Démarrer le service
+                self._start_at_index(idx)
+                self._auto_started.add(idx)
+                # Trouver quelle app a déclenché
+                detected = [app for app in trigger_apps if app in current_apps]
+                self._toast(
+                    tr("app_detected").format(detected[0]) + " - " +
+                    tr("service_auto_started").format(svc.get("name", "")), "success")
+            elif not any_running and idx in self._auto_started and idx in self.controllers:
+                # Arrêter le service (seulement s'il a été auto-démarré)
+                self._stop_at_index(idx)
+                self._auto_started.discard(idx)
+                self._toast(
+                    tr("service_auto_stopped").format(svc.get("name", "")), "info")
 
-        if new_games:
-            for game in new_games:
-                self.statusBar().showMessage(tr("game_detected").format(game), 3000)
+    def _stop_auto_activation(self):
+        """Arrête le timer d'auto-activation"""
+        if hasattr(self, '_auto_activation_timer'):
+            self._auto_activation_timer.stop()
 
-            # Démarrer les services qui ont game_detection activé
-            for idx, svc in enumerate(self.services):
-                if svc.get("game_detection", False) and idx not in self.controllers:
-                    self._start_at_index(idx)
-                    self.statusBar().showMessage(tr("service_auto_started").format(svc.get("name", "")), 3000)
-
-        # Jeux qui ne sont plus en cours
-        stopped_games = self._detected_games - games_found
-
-        if stopped_games:
-            # Arrêter les services qui ont game_detection activé
-            for idx, svc in enumerate(self.services):
-                if svc.get("game_detection", False) and idx in self.controllers:
-                    self._stop_at_index(idx)
-
-        self._detected_games = games_found
-
-    def _stop_game_detection(self):
-        """Arrête la détection de jeux"""
-        if hasattr(self, 'game_detection_timer'):
-            self.game_detection_timer.stop()
+    def _restart_auto_activation_if_needed(self):
+        """Redémarre le timer d'auto-activation si nécessaire"""
+        self._stop_auto_activation()
+        self._setup_auto_activation()
 
     # --- Planification ---
     def _setup_schedule_check(self):
@@ -2783,9 +3340,10 @@ class MainWindow(QMainWindow):
 
             # Vérifier si c'est un jour actif
             if current_day not in schedule_days:
-                # Arrêter le service s'il tourne
-                if idx in self.controllers:
+                # Arrêter le service seulement s'il a été démarré par le schedule
+                if idx in self._auto_started and idx in self.controllers:
                     self._stop_at_index(idx)
+                    self._auto_started.discard(idx)
                 continue
 
             # Vérifier l'heure
@@ -2795,9 +3353,11 @@ class MainWindow(QMainWindow):
                 # Démarrer si pas déjà actif
                 if idx not in self.controllers:
                     self._start_at_index(idx)
-                    self.statusBar().showMessage(tr("schedule_active") + f" - {svc.get('name', '')}", 3000)
+                    self._auto_started.add(idx)
+                    self._toast(tr("schedule_active") + f" - {svc.get('name', '')}", "success")
             else:
-                # Arrêter si actif
-                if idx in self.controllers:
+                # Arrêter seulement si démarré par le schedule
+                if idx in self._auto_started and idx in self.controllers:
                     self._stop_at_index(idx)
-                    self.statusBar().showMessage(tr("schedule_inactive") + f" - {svc.get('name', '')}", 3000)
+                    self._auto_started.discard(idx)
+                    self._toast(tr("schedule_inactive") + f" - {svc.get('name', '')}", "info")

@@ -11,25 +11,6 @@ def is_key_pressed(vk_code: int) -> bool:
     """Vérifie si une touche est actuellement pressée via GetAsyncKeyState."""
     return (user32.GetAsyncKeyState(vk_code) & 0x8000) != 0
 
-def are_modifiers_pressed(modifiers: int) -> bool:
-    """Vérifie si les modificateurs sont pressés."""
-    from win_hotkeys import MOD_CONTROL, MOD_ALT, MOD_SHIFT, MOD_WIN
-    VK_CONTROL = 0x11
-    VK_MENU = 0x12  # Alt
-    VK_SHIFT = 0x10
-    VK_LWIN = 0x5B
-    VK_RWIN = 0x5C
-
-    if modifiers & MOD_CONTROL and not is_key_pressed(VK_CONTROL):
-        return False
-    if modifiers & MOD_ALT and not is_key_pressed(VK_MENU):
-        return False
-    if modifiers & MOD_SHIFT and not is_key_pressed(VK_SHIFT):
-        return False
-    if modifiers & MOD_WIN and not (is_key_pressed(VK_LWIN) or is_key_pressed(VK_RWIN)):
-        return False
-    return True
-
 
 class VolumeServiceController:
     def __init__(self, name: str, targets: List[str], hotkey: str, reduction_pct: int,
