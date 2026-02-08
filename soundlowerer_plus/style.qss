@@ -264,12 +264,17 @@ QToolBar QToolButton:pressed {
 
 /* Splitter */
 QSplitter::handle {
-    background: #252525;
-    width: 2px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #252525, stop:0.4 #383838, stop:0.5 #454545,
+        stop:0.6 #383838, stop:1 #252525);
+    width: 4px;
+    border-radius: 2px;
 }
 
 QSplitter::handle:hover {
-    background: #5a9aad;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #252525, stop:0.4 #5a9aad, stop:0.5 #6aabbd,
+        stop:0.6 #5a9aad, stop:1 #252525);
 }
 
 /* Scroll Area */
