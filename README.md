@@ -67,13 +67,13 @@ pyinstaller soundlowerer_plus.spec --clean
 
 1. **Create a service**:
    - Enter a name
-   - Select target applications (or add manually)
    - Click "Record..." and press your desired hotkey
+   - Select target applications (or add manually)
    - Adjust reduction %, mode, and fade settings
 
-2. **Add the service** by clicking "New service"
+2. **Add the service** by clicking "New service" (always visible at the bottom)
 
-3. **Start the service** by double-clicking it or using the ▶ button
+3. **Start the service** by double-clicking it in the list
 
 4. **Use your hotkey** to control the volume!
 

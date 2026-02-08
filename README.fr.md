@@ -67,13 +67,13 @@ pyinstaller soundlowerer_plus.spec --clean
 
 1. **Créer un service** :
    - Entrez un nom
-   - Sélectionnez les applications cibles (ou ajoutez-en manuellement)
    - Cliquez sur "Enregistrer..." et appuyez sur votre raccourci
+   - Sélectionnez les applications cibles (ou ajoutez-en manuellement)
    - Ajustez le % de réduction, le mode et les paramètres de fondu
 
-2. **Ajoutez le service** en cliquant sur "Nouveau service"
+2. **Ajoutez le service** en cliquant sur "Nouveau service" (toujours visible en bas)
 
-3. **Démarrez le service** en double-cliquant dessus ou avec le bouton ▶
+3. **Démarrez le service** en double-cliquant dessus dans la liste
 
 4. **Utilisez votre raccourci** pour contrôler le volume !
 
