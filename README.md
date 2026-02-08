@@ -1,4 +1,4 @@
-# SoundLowerer
+# SoundLowerer Plus
 
 🇫🇷 [Lire en français](README.fr.md)
 
@@ -17,13 +17,22 @@ A Windows application to automatically lower the volume of specific applications
 - **Multiple services** - Create different profiles for different use cases
 - **Same hotkey support** - Use one shortcut to control multiple apps
 - **Import/Export** - Share your configurations as `.slp` files
-- **System tray** - Runs quietly in the background with colored indicator
+- **System tray** - Runs quietly in the background with active/inactive icon
 - **Auto-restore** - Services resume automatically on startup
 - **Bilingual** - French and English interface
 - **Dark/Light theme**
-- **Keyboard shortcuts** - Delete, Enter, Space to manage services
+- **Keyboard shortcuts** - Delete, Enter, Space, Ctrl+Enter to manage services
 - **Service search** - Filter services by name
 - **Drag & drop** - Reorder services by dragging
+- **Dynamic slider** - Color changes based on reduction level (green/cyan/orange)
+- **Enriched service list** - Shows reduction %, mode, and hotkey at a glance
+- **Sticky action buttons** - Always visible at the bottom, no scrolling needed
+- **Resizable app lists** - Drag to resize target app selection areas
+- **Real-time hotkey conflict detection** - Warns immediately when a shortcut is already in use
+- **Input validation** - Prevents duplicate names, invalid schedules
+- **Stop all from tray** - Quickly stop every running service from the system tray
+- **Visual pulse** - Status indicator flashes when a service hotkey is triggered
+- **Smart polling** - Pauses background scanning when minimized to save resources
 
 ### Advanced Features (enable in Settings)
 - **Profiles** - Save/load sets of services for different use cases
@@ -34,6 +43,7 @@ A Windows application to automatically lower the volume of specific applications
 - **Default volume on startup** - Reset specific apps to a defined volume when launching
 - **Hourly scheduling** - Automatically start/stop services based on time and day
 - **Game detection** - Auto-start services when a game is detected
+- **Reset to defaults** - Restore all settings to factory values
 
 ## Installation
 
@@ -91,7 +101,7 @@ pyinstaller soundlowerer_plus.spec --clean
 
 ## Screenshot
 
-<img width="1089" height="993" alt="SoundLowerer Plus 04_02_2026 18_12_01" src="https://github.com/user-attachments/assets/c5162dae-39ff-40ef-bf46-d44ebda41ac1" />
+*Screenshot coming soon*
 
 ## License
 

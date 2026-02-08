@@ -1,4 +1,4 @@
-# SoundLowerer
+# SoundLowerer Plus
 
 🇬🇧 [Read in English](README.md)
 
@@ -17,13 +17,22 @@ Une application Windows pour baisser automatiquement le volume de certaines appl
 - **Services multiples** - Créez différents profils selon vos besoins
 - **Même raccourci** - Utilisez un raccourci pour contrôler plusieurs apps
 - **Import/Export** - Partagez vos configurations en fichiers `.slp`
-- **Barre des tâches** - Fonctionne discrètement avec indicateur coloré
+- **Barre des tâches** - Fonctionne discrètement avec icône active/inactive
 - **Auto-restauration** - Les services reprennent automatiquement au démarrage
 - **Bilingue** - Interface française et anglaise
 - **Thème sombre/clair**
-- **Raccourcis clavier** - Suppr, Entrée, Espace pour gérer les services
+- **Raccourcis clavier** - Suppr, Entrée, Espace, Ctrl+Entrée pour gérer les services
 - **Recherche de services** - Filtrez les services par nom
 - **Glisser-déposer** - Réorganisez les services par glisser-déposer
+- **Slider dynamique** - La couleur change selon le niveau de réduction (vert/cyan/orange)
+- **Liste enrichie** - Affiche le % de réduction, le mode et le raccourci d'un coup d'oeil
+- **Boutons d'action fixes** - Toujours visibles en bas, sans scroller
+- **Listes d'apps redimensionnables** - Glissez pour agrandir les zones de sélection
+- **Détection de conflits en temps réel** - Avertit immédiatement si un raccourci est déjà utilisé
+- **Validation des entrées** - Empêche les noms dupliqués, les horaires invalides
+- **Tout arrêter depuis le tray** - Coupe tous les services actifs depuis la barre des tâches
+- **Pulse visuel** - L'indicateur de statut clignote quand un raccourci est déclenché
+- **Polling intelligent** - Met en pause le scan en arrière-plan quand l'app est minimisée
 
 ### Fonctionnalités avancées (activer dans Paramètres)
 - **Profils** - Sauvegardez/chargez des ensembles de services
@@ -34,6 +43,7 @@ Une application Windows pour baisser automatiquement le volume de certaines appl
 - **Volume par défaut au démarrage** - Remet les applications au volume spécifié au lancement
 - **Planification horaire** - Démarre/arrête automatiquement les services selon l'heure et le jour
 - **Détection de jeux** - Démarre automatiquement les services quand un jeu est détecté
+- **Réinitialisation** - Restaure tous les paramètres par défaut
 
 ## Installation
 
@@ -91,7 +101,7 @@ pyinstaller soundlowerer_plus.spec --clean
 
 ## Capture d'écran
 
-<img width="1089" height="993" alt="SoundLowerer Plus 04_02_2026 18_12_01" src="https://github.com/user-attachments/assets/c5162dae-39ff-40ef-bf46-d44ebda41ac1" />
+*Capture d'écran à venir*
 
 ## Licence
 
