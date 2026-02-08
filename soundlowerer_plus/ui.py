@@ -1902,11 +1902,8 @@ class MainWindow(QMainWindow):
 
     def _update_tray_icon(self, active: bool):
         """Met à jour l'icône du tray selon l'état actif"""
-        if active:
-            icon_path = os.path.join(resource_path("icons"), "tray_active.svg")
-        else:
-            icon_path = os.path.join(resource_path("icons"), "tray.svg")
-
+        name = "app_active.ico" if active else "app.ico"
+        icon_path = os.path.join(resource_path("icons"), name)
         if os.path.exists(icon_path):
             self.tray.setIcon(QIcon(icon_path))
 
@@ -2052,7 +2049,7 @@ class MainWindow(QMainWindow):
 
     # --- Tray ---
     def _setup_tray(self):
-        self.tray = QSystemTrayIcon(QIcon(os.path.join(resource_path("icons"), "tray.svg")), self)
+        self.tray = QSystemTrayIcon(QIcon(os.path.join(resource_path("icons"), "app.ico")), self)
         self.tray.activated.connect(self._on_tray_activated)
         self.tray_menu = QMenu()
         self.toggle_all_act = self.tray_menu.addAction(tr("tray_toggle_all"))

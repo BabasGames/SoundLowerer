@@ -5,7 +5,7 @@ a = Analysis(
     ['soundlowerer_plus\\main.py'],
     pathex=['soundlowerer_plus'],
     binaries=[],
-    datas=[('soundlowerer_plus/style.qss', '.'), ('soundlowerer_plus/icons/*.svg', 'icons'), ('soundlowerer_plus/icons/app.ico', 'icons')],
+    datas=[('soundlowerer_plus/style.qss', '.'), ('soundlowerer_plus/icons/*.svg', 'icons'), ('soundlowerer_plus/icons/*.ico', 'icons')],
     hiddenimports=['audio_backend', 'config', 'hotkeys', 'service', 'ui', 'win_hotkeys'],
     hookspath=[],
     hooksconfig={},
