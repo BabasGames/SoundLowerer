@@ -800,7 +800,7 @@ class SettingsDialog(QDialog):
 from audio_backend import unique_apps
 from service import VolumeServiceController
 from hotkeys import record_hotkey_once, validate_hotkey
-from config import load_config, save_config
+from config import load_config, save_config, get_logger
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -1262,6 +1262,10 @@ class MainWindow(QMainWindow):
         self.status_timer.setInterval(500)
         self.status_timer.timeout.connect(self._update_status_indicators)
         self.status_timer.start()
+
+        # Synchroniser le démarrage Windows avec la config
+        if self._startup_with_windows:
+            self._apply_startup_with_windows()
 
         # Restaurer les services actifs de la session précédente
         self._restore_active_services()
@@ -3165,30 +3169,29 @@ class MainWindow(QMainWindow):
         """Configure le démarrage automatique avec Windows"""
         import winreg
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-        app_name = "SoundLowerer"
+        app_name = "SoundLowererPlus"
 
         try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE | winreg.KEY_READ)
 
             if self._startup_with_windows:
-                # Ajouter au démarrage
                 if hasattr(sys, '_MEIPASS'):
-                    # Mode exe
-                    exe_path = sys.executable
+                    exe_path = f'"{sys.executable}"'
                 else:
-                    # Mode développement
                     exe_path = f'"{sys.executable}" "{os.path.abspath(__file__)}"'
                 winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
+                get_logger().info(f"Startup registered: {exe_path}")
             else:
-                # Supprimer du démarrage
                 try:
                     winreg.DeleteValue(key, app_name)
+                    get_logger().info("Startup unregistered")
                 except FileNotFoundError:
                     pass
 
             winreg.CloseKey(key)
         except Exception as e:
-            print(f"Erreur lors de la configuration du démarrage: {e}")
+            get_logger().error(f"Startup registry error: {e}")
+            self._toast(tr("startup_error") if "startup_error" in TRANSLATIONS.get(_current_lang, {}) else f"Startup error: {e}", "error")
 
     def _setup_auto_backup(self):
         """Configure la sauvegarde automatique"""
