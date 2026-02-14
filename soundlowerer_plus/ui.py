@@ -125,8 +125,8 @@ TRANSLATIONS = {
         "default_volume": "Volume par défaut",
         "default_volume_enabled": "Définir le volume au démarrage",
         "default_volume_desc": "Remet les applications au volume spécifié au lancement",
-        "startup_with_windows": "Démarrer avec Windows",
-        "startup_enabled": "Lancer au démarrage de Windows",
+        "startup_with_windows": "Démarrer au login",
+        "startup_enabled": "Lancer au démarrage du système",
         "statistics": "Statistiques",
         "usage_count": "Utilisations",
         "last_used": "Dernière utilisation",
@@ -265,8 +265,8 @@ TRANSLATIONS = {
         "default_volume": "Default volume",
         "default_volume_enabled": "Set volume on startup",
         "default_volume_desc": "Resets applications to specified volume on launch",
-        "startup_with_windows": "Start with Windows",
-        "startup_enabled": "Launch at Windows startup",
+        "startup_with_windows": "Start at login",
+        "startup_enabled": "Launch at system startup",
         "statistics": "Statistics",
         "usage_count": "Usage count",
         "last_used": "Last used",
@@ -809,19 +809,31 @@ def resource_path(relative_path):
     return os.path.join(os.path.dirname(__file__), relative_path)
 
 # Presets d'applications courantes
-APP_PRESETS = {
-    "Discord": ["discord.exe"],
-    "Spotify": ["spotify.exe"],
-    "Chrome": ["chrome.exe"],
-    "Firefox": ["firefox.exe"],
-    "Microsoft Edge": ["msedge.exe"],
-    "OBS Studio": ["obs64.exe", "obs32.exe"],
-    "Microsoft Teams": ["teams.exe", "ms-teams.exe"],
-    "Zoom": ["zoom.exe"],
-    "VLC": ["vlc.exe"],
-    "Steam": ["steam.exe", "steamwebhelper.exe"],
-    "Jeux (tout)": ["game", "unity", "unreal"],
-}
+if sys.platform == "win32":
+    APP_PRESETS = {
+        "Discord": ["discord.exe"],
+        "Spotify": ["spotify.exe"],
+        "Chrome": ["chrome.exe"],
+        "Firefox": ["firefox.exe"],
+        "Microsoft Edge": ["msedge.exe"],
+        "OBS Studio": ["obs64.exe", "obs32.exe"],
+        "Microsoft Teams": ["teams.exe", "ms-teams.exe"],
+        "Zoom": ["zoom.exe"],
+        "VLC": ["vlc.exe"],
+        "Steam": ["steam.exe", "steamwebhelper.exe"],
+        "Jeux (tout)": ["game", "unity", "unreal"],
+    }
+else:
+    APP_PRESETS = {
+        "Discord": ["discord"],
+        "Spotify": ["spotify"],
+        "Chrome": ["chrome", "chromium"],
+        "Firefox": ["firefox"],
+        "OBS Studio": ["obs"],
+        "Zoom": ["zoom"],
+        "VLC": ["vlc"],
+        "Steam": ["steam", "steamwebhelper"],
+    }
 
 
 class ResizableScrollArea(QWidget):
@@ -1488,8 +1500,8 @@ class MainWindow(QMainWindow):
 
         left_layout.addWidget(self.list_label)
         left_layout.addWidget(self.search_services_edit)
-        left_layout.addWidget(scroll_list)
-        left_layout.addWidget(self.empty_state)
+        left_layout.addWidget(scroll_list, 1)
+        left_layout.addWidget(self.empty_state, 1)
 
         central.addWidget(left_widget)
 
@@ -1574,7 +1586,7 @@ class MainWindow(QMainWindow):
         # Ajout manuel d'application
         add_app_row = QHBoxLayout()
         self.add_app_edit = QLineEdit()
-        self.add_app_edit.setPlaceholderText("spotify.exe")
+        self.add_app_edit.setPlaceholderText("spotify.exe" if sys.platform == "win32" else "spotify")
         self.add_app_edit.setToolTip(tr("tooltip_add_app"))
         self.add_app_edit.returnPressed.connect(self._add_manual_app)
 
@@ -1833,7 +1845,7 @@ class MainWindow(QMainWindow):
         # Ajout manuel
         trigger_add_row = QHBoxLayout()
         self.trigger_add_edit = QLineEdit()
-        self.trigger_add_edit.setPlaceholderText("app.exe")
+        self.trigger_add_edit.setPlaceholderText("app.exe" if sys.platform == "win32" else "app")
         self.trigger_add_edit.returnPressed.connect(self._add_manual_trigger_app)
         self.trigger_add_btn = QPushButton("+")
         self.trigger_add_btn.setFixedWidth(36)
@@ -2119,8 +2131,8 @@ class MainWindow(QMainWindow):
         app_name = self.add_app_edit.text().strip()
         if not app_name:
             return
-        # Assurer l'extension .exe si absente
-        if not app_name.endswith(".exe"):
+        # Assurer l'extension .exe si absente (Windows uniquement)
+        if sys.platform == "win32" and not app_name.endswith(".exe"):
             app_name += ".exe"
         app_name = app_name.lower()
 
@@ -2369,15 +2381,22 @@ class MainWindow(QMainWindow):
     def _add_new(self):
         """Crée un nouveau service"""
         svc = self._form_to_service()
+        get_logger().info(f"_add_new: svc={svc}")
         msg = self._validate(svc)
         if msg:
+            get_logger().warning(f"_add_new: validation échouée: {msg}")
             QMessageBox.warning(self, tr("validation"), msg)
             return
 
         self.services.append(svc)
         idx = len(self.services) - 1
+        get_logger().info(f"_add_new: ajout service idx={idx}, total={len(self.services)}")
         self._add_list_item(svc, idx)
         self._dirty = True
+
+        # Masquer l'état vide et afficher la liste
+        self.empty_state.setVisible(False)
+        self.service_scroll.setVisible(True)
 
         # Sélectionner le nouveau service
         self.service_list.select(idx)
@@ -2806,7 +2825,7 @@ class MainWindow(QMainWindow):
 
         # Placeholders
         self.filter_edit.setPlaceholderText(tr("filter_apps"))
-        self.add_app_edit.setPlaceholderText("spotify.exe")
+        self.add_app_edit.setPlaceholderText("spotify.exe" if sys.platform == "win32" else "spotify")
 
         # État vide
         self.empty_title.setText(tr("services"))
@@ -2978,11 +2997,18 @@ class MainWindow(QMainWindow):
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
         # Filtrer les processus système courants
-        system_procs = {'system', 'system idle process', 'svchost.exe', 'csrss.exe',
-                        'smss.exe', 'wininit.exe', 'services.exe', 'lsass.exe',
-                        'winlogon.exe', 'dwm.exe', 'conhost.exe', 'registry',
-                        'fontdrvhost.exe', 'dllhost.exe', 'sihost.exe',
-                        'taskhostw.exe', 'ctfmon.exe', 'runtimebroker.exe'}
+        if sys.platform == "win32":
+            system_procs = {'system', 'system idle process', 'svchost.exe', 'csrss.exe',
+                            'smss.exe', 'wininit.exe', 'services.exe', 'lsass.exe',
+                            'winlogon.exe', 'dwm.exe', 'conhost.exe', 'registry',
+                            'fontdrvhost.exe', 'dllhost.exe', 'sihost.exe',
+                            'taskhostw.exe', 'ctfmon.exe', 'runtimebroker.exe'}
+        else:
+            system_procs = {'systemd', 'init', 'kthreadd', 'ksoftirqd', 'kworker',
+                            'pipewire', 'pipewire-pulse', 'wireplumber',
+                            'pulseaudio', 'dbus-daemon', 'dbus-broker',
+                            'gdm', 'sddm', 'lightdm', 'xdg-desktop-portal',
+                            'gnome-shell', 'kwin', 'xfwm4', 'mutter'}
         return sorted(names - system_procs)
 
     def _build_trigger_apps_checkboxes(self, current_selections: Dict[str, bool] = None):
@@ -3166,19 +3192,27 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, tr("profiles"), f"Erreur: {e}")
 
     def _apply_startup_with_windows(self):
-        """Configure le démarrage automatique avec Windows"""
-        import winreg
-        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-        app_name = "SoundLowererPlus"
+        """Configure le démarrage automatique (Windows: registre, Linux: .desktop)"""
+        if sys.platform == "win32":
+            self._apply_startup_windows()
+        else:
+            self._apply_startup_linux()
 
+    def _apply_startup_windows(self):
+        """Configure le démarrage automatique via le registre Windows"""
         try:
+            import winreg
+            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+            app_name = "SoundLowererPlus"
+
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE | winreg.KEY_READ)
 
             if self._startup_with_windows:
                 if hasattr(sys, '_MEIPASS'):
-                    exe_path = f'"{sys.executable}"'
+                    exe_path = f'"{sys.executable}" --minimized'
                 else:
-                    exe_path = f'"{sys.executable}" "{os.path.abspath(__file__)}"'
+                    main_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
+                    exe_path = f'"{sys.executable}" "{main_path}" --minimized'
                 winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
                 get_logger().info(f"Startup registered: {exe_path}")
             else:
@@ -3192,6 +3226,40 @@ class MainWindow(QMainWindow):
         except Exception as e:
             get_logger().error(f"Startup registry error: {e}")
             self._toast(tr("startup_error") if "startup_error" in TRANSLATIONS.get(_current_lang, {}) else f"Startup error: {e}", "error")
+
+    def _apply_startup_linux(self):
+        """Configure le démarrage automatique via un fichier .desktop sur Linux"""
+        autostart_dir = os.path.expanduser("~/.config/autostart")
+        desktop_path = os.path.join(autostart_dir, "soundlowerer-plus.desktop")
+
+        try:
+            if self._startup_with_windows:
+                os.makedirs(autostart_dir, exist_ok=True)
+                if hasattr(sys, '_MEIPASS'):
+                    exec_path = f"{sys.executable} --minimized"
+                else:
+                    main_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
+                    exec_path = f"{sys.executable} {main_path} --minimized"
+
+                desktop_content = f"""[Desktop Entry]
+Type=Application
+Name=SoundLowerer Plus
+Exec={exec_path}
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Comment=Per-application volume control with hotkeys
+"""
+                with open(desktop_path, 'w') as f:
+                    f.write(desktop_content)
+                get_logger().info(f"Startup .desktop created: {desktop_path}")
+            else:
+                if os.path.exists(desktop_path):
+                    os.remove(desktop_path)
+                    get_logger().info("Startup .desktop removed")
+        except Exception as e:
+            get_logger().error(f"Startup .desktop error: {e}")
+            self._toast(f"Startup error: {e}", "error")
 
     def _setup_auto_backup(self):
         """Configure la sauvegarde automatique"""

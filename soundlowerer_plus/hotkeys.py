@@ -95,8 +95,8 @@ def validate_hotkey(hotkey: str) -> bool:
         return False
 
     try:
-        from win_hotkeys import parse_hotkey
-        modifiers, vk_code = parse_hotkey(hotkey)
-        return vk_code != 0
+        from platform_hotkeys import parse_hotkey
+        modifiers, key_id = parse_hotkey(hotkey)
+        return bool(key_id)
     except Exception:
         return False
