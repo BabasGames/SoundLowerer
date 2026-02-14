@@ -2,15 +2,15 @@
 
 
 a = Analysis(
-    ['soundlowerer_plus\\main.py'],
+    ['soundlowerer_plus/main.py'],
     pathex=['soundlowerer_plus'],
     binaries=[],
-    datas=[('soundlowerer_plus/style.qss', '.'), ('soundlowerer_plus/icons/*.svg', 'icons'), ('soundlowerer_plus/icons/*.ico', 'icons')],
-    hiddenimports=['audio_backend', 'audio_backend_windows', 'config', 'hotkeys', 'hotkeys_windows', 'platform_hotkeys', 'service', 'ui', 'win_hotkeys'],
+    datas=[('soundlowerer_plus/style.qss', '.'), ('soundlowerer_plus/icons/*.svg', 'icons'), ('soundlowerer_plus/icons/*.png', 'icons')],
+    hiddenimports=['audio_backend', 'audio_backend_linux', 'config', 'hotkeys', 'hotkeys_linux', 'platform_hotkeys', 'service', 'ui'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['pycaw', 'comtypes', 'win32api', 'win32con', 'winreg'],
     noarchive=False,
     optimize=0,
 )
@@ -35,5 +35,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='soundlowerer_plus/icons/app.ico',
 )

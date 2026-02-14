@@ -3,12 +3,24 @@ import os, json, shutil, logging
 APP_NAME = "SoundLowerer"
 CONFIG_FILE = "volume_control_services.json"
 
+def _get_real_home():
+    """Retourne le home de l'utilisateur réel, même sous sudo."""
+    sudo_user = os.environ.get('SUDO_USER')
+    if sudo_user and os.getuid() == 0:
+        import pwd
+        try:
+            return pwd.getpwnam(sudo_user).pw_dir
+        except KeyError:
+            pass
+    return os.path.expanduser("~")
+
 def config_dir():
     if os.name == "nt":
         base = os.environ.get("APPDATA", os.path.expanduser("~\\AppData\\Roaming"))
         return os.path.join(base, APP_NAME)
     else:
-        return os.path.join(os.path.expanduser("~/.config"), APP_NAME)
+        home = _get_real_home()
+        return os.path.join(home, ".config", APP_NAME)
 
 def ensure_config_dir():
     d = config_dir()

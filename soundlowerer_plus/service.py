@@ -1,15 +1,26 @@
-import threading, time, math, ctypes
+import threading, time, math, sys
 from typing import List, Dict, Optional
 from audio_backend import get_current_volumes, set_volume_for_processes
 from config import get_logger
-from win_hotkeys import get_manager, parse_hotkey
+from platform_hotkeys import get_manager, parse_hotkey
 
-# API Windows pour détecter l'état des touches
-user32 = ctypes.windll.user32
+# Détection de l'état des touches (cross-platform)
+if sys.platform == "win32":
+    import ctypes
+    _user32 = ctypes.windll.user32
 
-def is_key_pressed(vk_code: int) -> bool:
-    """Vérifie si une touche est actuellement pressée via GetAsyncKeyState."""
-    return (user32.GetAsyncKeyState(vk_code) & 0x8000) != 0
+    def is_key_pressed(key_id) -> bool:
+        """Vérifie si une touche est actuellement pressée via GetAsyncKeyState."""
+        return (_user32.GetAsyncKeyState(key_id) & 0x8000) != 0
+else:
+    import keyboard as _kb_lib
+
+    def is_key_pressed(key_id) -> bool:
+        """Vérifie si une touche est actuellement pressée via la lib keyboard."""
+        try:
+            return _kb_lib.is_pressed(key_id)
+        except Exception:
+            return False
 
 
 class VolumeServiceController:
@@ -30,9 +41,10 @@ class VolumeServiceController:
         self._hotkey_id: int = 0
         self._hold_thread: Optional[threading.Thread] = None
         self._original: Dict[str, float] = {}
-        self._modifiers = 0
-        self._vk_code = 0
+        self._modifiers = None  # int sur Windows, frozenset sur Linux
+        self._key_id = None     # vk_code (int) sur Windows, key_name (str) sur Linux
         self._hold_released_early = False
+        self._hold_starting = False  # Guard contre réentrance en mode hold
 
     def start(self):
         if self._running:
@@ -40,10 +52,10 @@ class VolumeServiceController:
         self._running = True
 
         # Parser le hotkey pour obtenir les codes
-        self._modifiers, self._vk_code = parse_hotkey(self.hotkey)
-        get_logger().info(f"Service '{self.name}': parsing hotkey '{self.hotkey}' -> modifiers={self._modifiers}, vk={self._vk_code}")
+        self._modifiers, self._key_id = parse_hotkey(self.hotkey)
+        get_logger().info(f"Service '{self.name}': parsing hotkey '{self.hotkey}' -> modifiers={self._modifiers}, key={self._key_id}")
 
-        if self._vk_code == 0:
+        if not self._key_id:
             get_logger().error(f"Service '{self.name}': hotkey invalide '{self.hotkey}'")
             return
 
@@ -103,14 +115,16 @@ class VolumeServiceController:
                 self._apply_reduction()
         else:
             # Mode hold: activer et surveiller le relâchement
-            if not self._active:
-                # Réinitialiser le flag
+            if not self._active and not self._hold_starting:
+                # Réinitialiser les flags
                 self._hold_released_early = False
+                self._hold_starting = True
                 # Démarrer le thread de surveillance AVANT d'appliquer la réduction
                 # pour ne pas rater le relâchement pendant le fade
                 self._hold_thread = threading.Thread(target=self._hold_loop, daemon=True)
                 self._hold_thread.start()
                 self._apply_reduction()
+                self._hold_starting = False
 
     def _hold_loop(self):
         """Boucle qui attend le relâchement de la touche en mode hold."""
@@ -122,7 +136,7 @@ class VolumeServiceController:
         timeout = 0
         while self._running and not self._active and timeout < 100:
             # Vérifier si la touche a déjà été relâchée pendant le fade
-            if not is_key_pressed(self._vk_code):
+            if not is_key_pressed(self._key_id):
                 # Marquer pour restauration dès que le fade est terminé
                 self._hold_released_early = True
                 return
@@ -132,7 +146,7 @@ class VolumeServiceController:
         # Maintenant surveiller le relâchement
         while self._running and self._active:
             # Vérifier si la touche principale est toujours pressée
-            if not is_key_pressed(self._vk_code):
+            if not is_key_pressed(self._key_id):
                 # La touche a été relâchée
                 self._restore()
                 break

@@ -2,7 +2,7 @@
 
 🇬🇧 [Read in English](README.md)
 
-Une application Windows pour baisser automatiquement le volume de certaines applications avec des raccourcis clavier.
+Une application multi-plateforme (Windows & Linux) pour baisser automatiquement le volume de certaines applications avec des raccourcis clavier.
 
 ## Fonctionnalités
 
@@ -36,7 +36,7 @@ Une application Windows pour baisser automatiquement le volume de certaines appl
 
 ### Fonctionnalités avancées (activer dans Paramètres)
 - **Profils** - Sauvegardez/chargez des ensembles de services
-- **Démarrer avec Windows** - Lancement automatique au démarrage
+- **Démarrer au login** - Lancement automatique au démarrage
 - **Sauvegarde auto** - Sauvegarde automatique de votre configuration
 - **Statistiques** - Suivez la fréquence d'utilisation de chaque service
 - **Vérification des mises à jour** - Vérifiez les nouvelles versions sur GitHub
@@ -47,30 +47,40 @@ Une application Windows pour baisser automatiquement le volume de certaines appl
 
 ## Installation
 
-### Depuis les Releases
+### Depuis les Releases (Windows)
 1. Téléchargez le dernier `soundlowerer_plus.exe` depuis [Releases](../../releases)
 2. Lancez l'exécutable
 3. **Lancez en Administrateur** pour que les raccourcis fonctionnent dans les jeux
 
 > **Note** : Windows SmartScreen peut afficher un avertissement au premier lancement car l'application n'est pas signée avec un certificat payant. C'est normal pour les logiciels indépendants. Cliquez sur **"Informations complémentaires"** puis **"Exécuter quand même"** pour continuer. L'application est open source et sans danger.
 
-### Depuis les sources
+### Depuis les sources (Windows & Linux)
 ```bash
 # Cloner le dépôt
 git clone https://github.com/BabasGames/SoundLowerer.git
 cd SoundLowerer
 
 # Installer les dépendances
-pip install -r requirements.txt
+pip install -r soundlowerer_plus/requirements.txt
 
 # Lancer
 python soundlowerer_plus/main.py
 ```
 
+> **Note Linux** : La bibliothèque `keyboard` nécessite des privilèges élevés pour les raccourcis globaux. Lancez avec `sudo` ou ajoutez votre utilisateur au groupe `input` :
+> ```bash
+> sudo usermod -aG input $USER
+> # Déconnectez-vous puis reconnectez-vous, puis :
+> python soundlowerer_plus/main.py
+> ```
+
 ### Compiler l'exécutable
 ```bash
 pip install pyinstaller
+# Windows
 pyinstaller soundlowerer_plus.spec --clean
+# Linux
+pyinstaller soundlowerer_plus_linux.spec --clean
 ```
 
 ## Utilisation
@@ -89,15 +99,15 @@ pyinstaller soundlowerer_plus.spec --clean
 
 ## Configuration requise
 
-- Windows 10/11
+- Windows 10/11 ou Linux (PulseAudio/PipeWire)
 - Python 3.8+ (si lancé depuis les sources)
 
 ### Dépendances
 - PyQt5
-- pycaw
-- comtypes
 - keyboard
-- pywin32
+- pycaw (Windows)
+- pulsectl (Linux)
+- psutil
 
 ## Capture d'écran
 
@@ -110,5 +120,3 @@ Licence MIT - Voir [LICENSE](LICENSE) pour les détails.
 ## Contribuer
 
 Les contributions sont les bienvenues ! N'hésitez pas à ouvrir des issues ou soumettre des pull requests.
-
-

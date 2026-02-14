@@ -2,7 +2,7 @@
 
 🇫🇷 [Lire en français](README.fr.md)
 
-A Windows application to automatically lower the volume of specific applications using keyboard shortcuts.
+A cross-platform application (Windows & Linux) to automatically lower the volume of specific applications using keyboard shortcuts.
 
 ## Features
 
@@ -36,7 +36,7 @@ A Windows application to automatically lower the volume of specific applications
 
 ### Advanced Features (enable in Settings)
 - **Profiles** - Save/load sets of services for different use cases
-- **Start with Windows** - Launch automatically at startup
+- **Start at login** - Launch automatically at startup
 - **Auto backup** - Automatically backup your configuration
 - **Usage statistics** - Track how often each service is used
 - **Update checker** - Check for new versions on GitHub
@@ -47,30 +47,40 @@ A Windows application to automatically lower the volume of specific applications
 
 ## Installation
 
-### From Release
+### From Release (Windows)
 1. Download the latest `soundlowerer_plus.exe` from [Releases](../../releases)
 2. Run the executable
 3. **Run as Administrator** for hotkeys to work in games
 
 > **Note**: Windows SmartScreen may display a warning on first launch because the app is not signed with a paid certificate. This is normal for independent software. Click **"More info"** then **"Run anyway"** to proceed. The application is open source and safe to use.
 
-### From Source
+### From Source (Windows & Linux)
 ```bash
 # Clone the repository
 git clone https://github.com/BabasGames/SoundLowerer.git
 cd SoundLowerer
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r soundlowerer_plus/requirements.txt
 
 # Run
 python soundlowerer_plus/main.py
 ```
 
+> **Linux note**: The `keyboard` library requires elevated privileges for global hotkeys. Run with `sudo` or add your user to the `input` group:
+> ```bash
+> sudo usermod -aG input $USER
+> # Log out and back in, then:
+> python soundlowerer_plus/main.py
+> ```
+
 ### Build Executable
 ```bash
 pip install pyinstaller
+# Windows
 pyinstaller soundlowerer_plus.spec --clean
+# Linux
+pyinstaller soundlowerer_plus_linux.spec --clean
 ```
 
 ## Usage
@@ -89,15 +99,15 @@ pyinstaller soundlowerer_plus.spec --clean
 
 ## Requirements
 
-- Windows 10/11
+- Windows 10/11 or Linux (PulseAudio/PipeWire)
 - Python 3.8+ (if running from source)
 
 ### Dependencies
 - PyQt5
-- pycaw
-- comtypes
 - keyboard
-- pywin32
+- pycaw (Windows)
+- pulsectl (Linux)
+- psutil
 
 ## Screenshot
 
@@ -110,5 +120,3 @@ MIT License - See [LICENSE](LICENSE) for details.
 ## Contributing
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
-
-
