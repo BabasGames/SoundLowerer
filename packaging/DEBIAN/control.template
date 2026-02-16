@@ -1,0 +1,15 @@
+Package: soundlowerer-plus
+Version: @@VERSION@@
+Section: sound
+Priority: optional
+Architecture: @@ARCH@@
+Installed-Size: @@INSTALLED_SIZE@@
+Maintainer: BabasGames
+Homepage: https://github.com/BabasGames/SoundLowerer
+Description: Per-application volume control with hotkeys
+ SoundLowerer Plus is a cross-platform application that automatically
+ lowers the volume of specific applications using keyboard shortcuts.
+ Features include hold/toggle modes, smooth fade transitions, whitelist
+ mode, multiple service profiles, and system tray integration.
+ .
+ Works with PulseAudio and PipeWire on Linux.

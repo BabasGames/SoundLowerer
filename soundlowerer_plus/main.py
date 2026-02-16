@@ -81,6 +81,7 @@ def main():
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
     app = SingleInstanceApp(sys.argv)
+    app.setDesktopFileName('soundlowerer-plus')
 
     # Vérifier si une instance existe déjà
     if app.is_running():

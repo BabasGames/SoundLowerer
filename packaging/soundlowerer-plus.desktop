@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=SoundLowerer Plus
+GenericName=Volume Control
+Comment=Per-application volume control with keyboard shortcuts
+Exec=soundlowerer-plus
+Icon=soundlowerer-plus
+Terminal=false
+Categories=AudioVideo;Audio;Settings;
+Keywords=volume;audio;sound;hotkey;control;mixer;
+StartupWMClass=soundlowerer-plus
+StartupNotify=true
