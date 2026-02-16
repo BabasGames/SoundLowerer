@@ -4,12 +4,21 @@ APP_NAME = "SoundLowerer"
 CONFIG_FILE = "volume_control_services.json"
 
 def _get_real_home():
-    """Retourne le home de l'utilisateur réel, même sous sudo."""
+    """Retourne le home de l'utilisateur réel, même sous sudo ou setuid."""
+    if os.name == "nt":
+        return os.path.expanduser("~")
+    import pwd
+    # Cas sudo: SUDO_USER est défini
     sudo_user = os.environ.get('SUDO_USER')
-    if sudo_user and os.getuid() == 0:
-        import pwd
+    if sudo_user and os.geteuid() == 0:
         try:
             return pwd.getpwnam(sudo_user).pw_dir
+        except KeyError:
+            pass
+    # Cas setuid: UID réel != UID effectif
+    if os.getuid() != os.geteuid() and os.geteuid() == 0:
+        try:
+            return pwd.getpwuid(os.getuid()).pw_dir
         except KeyError:
             pass
     return os.path.expanduser("~")

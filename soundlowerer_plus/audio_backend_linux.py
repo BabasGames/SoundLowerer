@@ -14,27 +14,38 @@ _apps_cache = {"data": [], "timestamp": 0}
 CACHE_TTL = 3.0  # secondes
 
 
+def _get_real_uid():
+    """Retourne l'UID de l'utilisateur réel (sudo ou setuid)."""
+    # Cas sudo: SUDO_UID est défini
+    sudo_uid = os.environ.get('SUDO_UID')
+    if sudo_uid and os.geteuid() == 0:
+        return sudo_uid
+    # Cas setuid: UID réel != UID effectif
+    if os.getuid() != os.geteuid() and os.geteuid() == 0:
+        return str(os.getuid())
+    return None
+
+
 def _detect_pulse_server():
-    """Détecte le serveur PulseAudio, y compris quand lancé via sudo."""
+    """Détecte le serveur PulseAudio, y compris quand lancé via sudo ou setuid."""
     # Si PULSE_SERVER est déjà défini, l'utiliser
     if os.environ.get('PULSE_SERVER'):
         return os.environ['PULSE_SERVER']
 
-    # Si lancé via sudo, on tourne en root mais PulseAudio tourne en user
-    sudo_uid = os.environ.get('SUDO_UID')
-    if sudo_uid and os.getuid() == 0:
+    real_uid = _get_real_uid()
+    if real_uid:
         # Essayer le socket PulseAudio de l'utilisateur original
-        pulse_socket = f"/run/user/{sudo_uid}/pulse/native"
+        pulse_socket = f"/run/user/{real_uid}/pulse/native"
         if os.path.exists(pulse_socket):
             server = f"unix:{pulse_socket}"
-            get_logger().info(f"Sudo détecté: connexion PulseAudio via {server}")
+            get_logger().info(f"Connexion PulseAudio via {server} (uid={real_uid})")
             return server
 
         # Essayer le socket PipeWire-Pulse
-        pipewire_socket = f"/run/user/{sudo_uid}/pipewire-0"
+        pipewire_socket = f"/run/user/{real_uid}/pipewire-0"
         if os.path.exists(pipewire_socket):
             server = f"unix:{pipewire_socket}"
-            get_logger().info(f"Sudo détecté: connexion PipeWire via {server}")
+            get_logger().info(f"Connexion PipeWire via {server} (uid={real_uid})")
             return server
 
     return None
