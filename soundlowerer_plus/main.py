@@ -69,6 +69,7 @@ class SingleInstanceApp(QApplication):
 
 
 def main():
+    minimized = "--minimized" in sys.argv
     logger = get_logger()
 
     # Support High DPI pour écrans 4K (doit être avant QApplication)
@@ -101,7 +102,11 @@ def main():
 
     w = MainWindow()
     app.set_window(w)
-    w.show()
+
+    if minimized:
+        logger.info("Démarré minimisé dans le system tray")
+    else:
+        w.show()
 
     exit_code = app.exec_()
 
